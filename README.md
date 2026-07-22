@@ -1,0 +1,89 @@
+# 🗳️ חגיגה של דמוקרטיה
+
+אפליקציית ווב לניחושי בחירות בין חברים — מחליפה את הטופס ב־JotForm + גיליון Google.
+משתתפים מנחשים מנדטים לכל מפלגה, מוסיפים תוספות (הכפלה / בונוס צלפים / עוברת או לא),
+משלמים ב־PayBox, והאפליקציה מחשבת אוטומטית את הזכיות לפי [התקנון](docs/regulation.md).
+
+בנוי על **Next.js (App Router)** + **Supabase** (Postgres + Google Auth + RLS), פרוס ל־**Vercel**.
+
+מנוע החישוב מאומת מול הגיליון המקורי של סבב 2022 — `test/calc.test.ts` משחזר את
+כל 68 הערכים במדויק (שגיאה 0). ראו `docs/regulation.md` לחוקים.
+
+---
+
+## התקנה מלאה (מאפס לאוויר)
+
+### 1. Supabase
+1. צרו פרויקט ב־[supabase.com](https://supabase.com).
+2. **SQL Editor** → הריצו את `supabase/migrations/0001_init.sql`, ואז את `supabase/seed.sql`
+   (ערכו קודם את רשימת מיילי המנהלים ואת רשימת המפלגות ב־seed לפי הצורך).
+3. **Authentication → Providers → Google**: הפעילו והדביקו Client ID / Secret
+   (מ־[Google Cloud Console](https://console.cloud.google.com/) → OAuth 2.0 Client).
+   ב־Google Console הוסיפו ל־Authorized redirect URIs את:
+   `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
+4. **Authentication → URL Configuration**: הגדירו Site URL לכתובת ה־Vercel שלכם
+   והוסיפו `https://<your-app>.vercel.app/**` ל־Redirect URLs (וגם `http://localhost:3000/**` לפיתוח).
+
+### 2. משתני סביבה
+העתיקו `.env.local.example` ל־`.env.local` ומלאו (מתוך Supabase → Project Settings → API):
+
+| משתנה | מאיפה |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key (**סודי — שרת בלבד**) |
+| `NEXT_PUBLIC_SITE_URL` | כתובת האתר (localhost בפיתוח, כתובת Vercel בפרודקשן) |
+
+### 3. הרצה מקומית
+```bash
+npm install
+npm run dev        # http://localhost:3000
+npm test           # מריץ את בדיקות מנוע החישוב
+```
+
+### 4. פריסה ל־Vercel
+1. חברו את הריפו ל־Vercel (framework מזוהה אוטומטית כ־Next.js).
+2. הוסיפו את אותם משתני סביבה ב־Project → Settings → Environment Variables
+   (עדכנו את `NEXT_PUBLIC_SITE_URL` לכתובת הסופית).
+3. Deploy.
+
+---
+
+## איך משתמשים
+
+**משתתף:** מתחבר עם Google → “להימור” → ממלא מנדטים + תוספות → משלם ב־PayBox →
+לוחץ “כבר שילמתי”. אפשר לערוך את ההימור עד סגירת הסבב.
+
+**מנהל** (לשונית *ניהול*):
+- **סבב והגדרות** — יצירת סבב, עריכת קופות/עלויות/אחוזים, הגדרת **קישור PayBox** ו**מועד נעילה אוטומטי**,
+  ופתיחה/סגירה/פרסום ידניים.
+- **מפלגות** — הוספה/הסרה/עריכה, סימון מפלגות “מתנדנדות”.
+- **תוצאות** — הזנת מנדטים בפועל ותוצאת מעבר/אי־מעבר; שמירה מעדכנת מיד את הדירוג.
+- **תשלומים** — אישור ידני של משתתפים ששילמו.
+- **משתמשים** — הפיכה למנהל / חסימה.
+
+### מחזור חיי סבב
+`טיוטה → פתוח → סגור → תוצאות סופיות`
+- **נעילה אוטומטית**: אם הוגדר “מועד קובע”, הסבב נסגר לבד כשעובר הזמן.
+- **נעילה ידנית**: כפתור “סגירת הימורים”.
+- **פרסום סופי**: לאחר הזנת התוצאות, “פרסום תוצאות סופיות” מחשב ומציג את הזכיות
+  (נכללים רק משתתפים ששולמו — תקנון 2.4).
+
+---
+
+## מבנה
+```
+src/lib/calc.ts          מנוע החישוב (טהור, מאומת מול 2022)
+src/lib/data.ts          שכבת גישה לנתונים + חישוב קופות/דירוג
+src/lib/actions/         Server Actions (הימור, ניהול, התחברות)
+src/app/                 עמודים (בית, הימור, ההימור שלי, ניהול)
+supabase/                מיגרציה + seed + RLS
+docs/regulation.md       התקנון — מקור האמת לחוקים
+test/                    בדיקות המנוע + fixtures מ־2022
+```
+
+## הערות
+- כתובות מייל **אינן** נחשפות בטבלה הציבורית (view נפרד `v_public_bids`).
+- כל הכתיבות רגישות עוברות דרך Server Actions עם הרשאת service-role לאחר אימות זהות.
+- כלל 1–3 מנדטים (3.1.4): הימור כזה מסומן “מוקפא” עד שיתוקן.
+- יתרות עיגול שלא חולקו מוצגות למנהל (תקנון 1.7).

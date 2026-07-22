@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env.local
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# Source spreadsheets contain participant personal data — keep out of the repo
+*.xlsx
