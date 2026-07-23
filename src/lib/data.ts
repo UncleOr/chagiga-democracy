@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { supabaseConfigured } from "@/lib/supabase/config";
 import type { Party, Round } from "@/lib/types";
 import { settle, type CalcBid, type CalcParty, type CalcConfig, type SettlementResult, amountDue } from "@/lib/calc";
 
@@ -38,6 +39,7 @@ export interface RoundData {
 
 /** The round to display: the open one, else the most recent non-draft round. */
 export async function getActiveRound(): Promise<Round | null> {
+  if (!supabaseConfigured) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("rounds")
@@ -61,12 +63,14 @@ export async function getActiveRound(): Promise<Round | null> {
 }
 
 export async function getAllRounds(): Promise<Round[]> {
+  if (!supabaseConfigured) return [];
   const supabase = await createClient();
   const { data } = await supabase.from("rounds").select("*").order("created_at", { ascending: false });
   return (data ?? []) as Round[];
 }
 
 export async function getRoundById(id: string): Promise<Round | null> {
+  if (!supabaseConfigured) return null;
   const supabase = await createClient();
   const { data } = await supabase.from("rounds").select("*").eq("id", id).maybeSingle();
   return (data as Round) ?? null;

@@ -1,10 +1,12 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseConfigured } from "@/lib/supabase/config";
 import type { Profile } from "@/lib/types";
 
 /** Returns the current profile, or null when signed out. Bootstraps a profile row on first login. */
 export async function getProfile(): Promise<Profile | null> {
+  if (!supabaseConfigured) return null;
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,6 +27,7 @@ export async function getProfile(): Promise<Profile | null> {
         id: user.id,
         email: user.email,
         display_name:
+          (user.user_metadata?.display_name as string) ??
           (user.user_metadata?.full_name as string) ??
           (user.user_metadata?.name as string) ??
           null,

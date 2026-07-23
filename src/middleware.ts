@@ -1,10 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseConfigured } from "@/lib/supabase/config";
 
 // Refreshes the Supabase session cookie on every request so Server Components
 // always see a valid session.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+
+  // Before the project is wired to Supabase, skip auth so pages still render.
+  if (!supabaseConfigured) return response;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
