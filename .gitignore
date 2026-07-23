@@ -10,3 +10,5 @@ next-env.d.ts
 
 # Source spreadsheets contain participant personal data — keep out of the repo
 *.xlsx
+
+.vercel

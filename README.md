@@ -4,7 +4,12 @@
 משתתפים מנחשים מנדטים לכל מפלגה, מוסיפים תוספות (הכפלה / בונוס צלפים / עוברת או לא),
 משלמים ב־PayBox, והאפליקציה מחשבת אוטומטית את הזכיות לפי [התקנון](docs/regulation.md).
 
-בנוי על **Next.js (App Router)** + **Supabase** (Postgres + Google Auth + RLS), פרוס ל־**Vercel**.
+בנוי על **Next.js (App Router)** + **Supabase** (Postgres + Auth + RLS), פרוס ל־**Vercel**.
+
+🌐 **פרוד:** https://chagiga-democracy.vercel.app — האתר עולה עם באנר “טרם חובר למסד הנתונים”
+עד שמזינים פרטי Supabase אמיתיים (ראו למטה) ופורסים מחדש.
+
+🔑 **התחברות:** אימייל + סיסמה (שם + סיסמה). אפשר להחליף ל־Google בהמשך.
 
 מנוע החישוב מאומת מול הגיליון המקורי של סבב 2022 — `test/calc.test.ts` משחזר את
 כל 68 הערכים במדויק (שגיאה 0). ראו `docs/regulation.md` לחוקים.
@@ -17,12 +22,10 @@
 1. צרו פרויקט ב־[supabase.com](https://supabase.com).
 2. **SQL Editor** → הריצו את `supabase/migrations/0001_init.sql`, ואז את `supabase/seed.sql`
    (ערכו קודם את רשימת מיילי המנהלים ואת רשימת המפלגות ב־seed לפי הצורך).
-3. **Authentication → Providers → Google**: הפעילו והדביקו Client ID / Secret
-   (מ־[Google Cloud Console](https://console.cloud.google.com/) → OAuth 2.0 Client).
-   ב־Google Console הוסיפו ל־Authorized redirect URIs את:
-   `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
-4. **Authentication → URL Configuration**: הגדירו Site URL לכתובת ה־Vercel שלכם
-   והוסיפו `https://<your-app>.vercel.app/**` ל־Redirect URLs (וגם `http://localhost:3000/**` לפיתוח).
+3. **Authentication → Providers → Email**: ודאו שהוא מופעל. כדי שהרשמה תחבר מיד
+   בלי אימות מייל — כבו **“Confirm email”** (Authentication → Providers → Email).
+   (מומלץ להשאיר דלוק לפרודקשן אמיתי; אז משתמש חדש יקבל מייל אישור לפני התחברות.)
+4. **Authentication → URL Configuration**: הגדירו Site URL ל־`https://chagiga-democracy.vercel.app`.
 
 ### 2. משתני סביבה
 העתיקו `.env.local.example` ל־`.env.local` ומלאו (מתוך Supabase → Project Settings → API):
@@ -51,7 +54,7 @@ npm test           # מריץ את בדיקות מנוע החישוב
 
 ## איך משתמשים
 
-**משתתף:** מתחבר עם Google → “להימור” → ממלא מנדטים + תוספות → משלם ב־PayBox →
+**משתתף:** נרשם עם שם + אימייל + סיסמה → “להימור” → ממלא מנדטים + תוספות → משלם ב־PayBox →
 לוחץ “כבר שילמתי”. אפשר לערוך את ההימור עד סגירת הסבב.
 
 **מנהל** (לשונית *ניהול*):
