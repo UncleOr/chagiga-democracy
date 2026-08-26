@@ -22,8 +22,10 @@ export async function submitBid(_prev: unknown, formData: FormData): Promise<Sub
     return { ok: false, error: "עבר המועד הקובע — ההימורים נסגרו." };
 
   const parties = await getParties(round.id);
-  const nickname = String(formData.get("nickname") ?? "").trim();
-  if (!nickname) return { ok: false, error: "יש לבחור כינוי." };
+  // Nickname comes from the profile (set in the personal area), not the bet form.
+  const nickname = (profile.display_name ?? "").trim();
+  if (!nickname)
+    return { ok: false, error: "יש להגדיר כינוי באזור האישי לפני ההימור." };
   if (nickname.length > 40) return { ok: false, error: "הכינוי ארוך מדי." };
 
   const is_double = formData.get("is_double") === "on";

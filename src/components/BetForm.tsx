@@ -78,22 +78,6 @@ export function BetForm({
 
   return (
     <form action={action} className="space-y-5">
-      {/* Nickname */}
-      <div className="card p-5">
-        <label className="label" htmlFor="nickname">
-          כינוי (יוצג בטבלה לכל המשתתפים)
-        </label>
-        <input
-          id="nickname"
-          name="nickname"
-          defaultValue={existing?.nickname ?? ""}
-          maxLength={40}
-          required
-          placeholder="איך שיקראו לך בטבלה"
-          className="input"
-        />
-      </div>
-
       {/* Seats */}
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -185,7 +169,7 @@ export function BetForm({
         {hasPassfail && (
           <div className="mt-4 rounded-xl border border-slate-200 p-3">
             <p className="mb-3 text-sm font-medium text-slate-600">
-              האם המפלגות המתנדנדות יעברו את אחוז החסימה ({round.threshold_pct}%)?
+              האם המפלגות המתנדנדות יעברו את אחוז החסימה (מעבר ל‑{round.threshold_pct} מנדטים)?
             </p>
             <div className="space-y-2">
               {swing.map((p) => (

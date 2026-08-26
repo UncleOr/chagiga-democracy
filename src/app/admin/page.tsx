@@ -122,7 +122,7 @@ async function RoundPanel({ round }: { round: Round }) {
             defaultValue={toLocalInput(round.closes_at)}
           />
           <Field label="קישור PayBox" name="paybox_url" defaultValue={round.paybox_url ?? ""} placeholder="https://payboxapp.page.link/..." />
-          <Field label="אחוז חסימה" name="threshold_pct" type="number" step="0.1" defaultValue={round.threshold_pct} />
+          <Field label="סף מעבר (מנדטים)" name="threshold_pct" type="number" step="1" defaultValue={round.threshold_pct} />
           <Field label="הימור בסיסי (₪)" name="base_bet" type="number" defaultValue={round.base_bet} />
           <Field label="עלות הכפלה (₪)" name="double_cost" type="number" defaultValue={round.double_cost} />
           <Field label="עלות בונוס צלפים (₪)" name="sniper_cost" type="number" defaultValue={round.sniper_cost} />

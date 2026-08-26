@@ -10,9 +10,27 @@ const heebo = Heebo({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://chagiga-democracy-swart.vercel.app";
+const DESCRIPTION =
+  "משחק ניחושי הבחירות בין חברים — ניחוש מנדטים, הימור זהב, בונוס צלפים ועוברת או לא.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "חגיגה של דמוקרטיה",
-  description: "משחק ניחושי הבחירות בין חברים — ניחוש מנדטים, הימור זהב, בונוס צלפים ועוברת או לא.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "חגיגה של דמוקרטיה",
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "חגיגה של דמוקרטיה",
+    locale: "he_IL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "חגיגה של דמוקרטיה",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

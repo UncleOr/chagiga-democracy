@@ -3,31 +3,42 @@ import { requireUser } from "@/lib/auth";
 import { getActiveRound, getParties, getMyBid, getRoundData, settleRoundData } from "@/lib/data";
 import { ilsShort } from "@/lib/format";
 import { ClaimPaidButton } from "@/components/ClaimPaidButton";
+import { NicknameCard } from "@/components/NicknameCard";
 
 export default async function MePage() {
   const profile = await requireUser();
   const round = await getActiveRound();
-  if (!round) {
-    return <div className="card mx-auto mt-12 max-w-md p-8 text-center">אין סבב פעיל.</div>;
-  }
 
-  const [parties, myBid] = await Promise.all([getParties(round.id), getMyBid(round.id, profile.id)]);
+  return (
+    <div className="mx-auto max-w-2xl space-y-5">
+      <h1 className="text-2xl font-extrabold">האזור האישי</h1>
+      <NicknameCard current={profile.display_name} />
+      {!round ? (
+        <div className="card p-8 text-center text-slate-500">אין סבב פעיל כרגע.</div>
+      ) : (
+        <BetSection roundId={round.id} userId={profile.id} />
+      )}
+    </div>
+  );
+}
+
+async function BetSection({ roundId, userId }: { roundId: string; userId: string }) {
+  const round = (await getActiveRound())!;
+  const [parties, myBid] = await Promise.all([getParties(roundId), getMyBid(roundId, userId)]);
 
   if (!myBid) {
     return (
-      <div className="mx-auto mt-12 max-w-md text-center">
-        <div className="card p-8">
-          <div className="mb-2 text-4xl">🎲</div>
-          <h1 className="text-xl font-bold">עוד לא הימרת</h1>
-          <p className="mt-2 text-sm text-slate-500">{round.name}</p>
-          {round.status === "open" ? (
-            <Link href="/bet" className="btn-primary mt-5">
-              להימור
-            </Link>
-          ) : (
-            <p className="mt-4 text-sm text-slate-400">ההימורים סגורים.</p>
-          )}
-        </div>
+      <div className="card p-8 text-center">
+        <div className="mb-2 text-4xl">🎲</div>
+        <h2 className="text-xl font-bold">עוד לא הימרת</h2>
+        <p className="mt-2 text-sm text-slate-500">{round.name}</p>
+        {round.status === "open" ? (
+          <Link href="/bet" className="btn-primary mt-5">
+            להימור
+          </Link>
+        ) : (
+          <p className="mt-4 text-sm text-slate-400">ההימורים סגורים.</p>
+        )}
       </div>
     );
   }
@@ -44,13 +55,11 @@ export default async function MePage() {
   const seatParties = parties.filter((p) => myBid.seats[p.id] != null);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold">ההימור שלי</h1>
-          <p className="text-sm text-slate-500">
-            {round.name} · כינוי: <b>{myBid.nickname}</b>
-          </p>
+          <h2 className="text-xl font-extrabold">ההימור שלי</h2>
+          <p className="text-sm text-slate-500">{round.name}</p>
         </div>
         {round.status === "open" && (
           <Link href="/bet" className="btn-ghost">
@@ -105,7 +114,7 @@ export default async function MePage() {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
