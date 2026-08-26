@@ -6,12 +6,15 @@ import {
   currentPots,
   hasResults,
   settleRoundData,
+  getMyBid,
 } from "@/lib/data";
 import { PotsBar } from "@/components/PotsBar";
 import { StatusBanner } from "@/components/StatusBanner";
 import { Dashboard, type DashRow, type DashParty } from "@/components/Dashboard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ShareButtons } from "@/components/ShareButtons";
+import { OnboardingModal } from "@/components/OnboardingModal";
+import { ProgressSteps } from "@/components/ProgressSteps";
 import { ResultsStrip } from "@/components/ResultsStrip";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +44,11 @@ export default async function HomePage() {
   const resultsExist = hasResults(data.parties);
   const settled = round.status === "settled";
   const settlement = resultsExist ? settleRoundData(data, { onlyPaid: true }) : null;
+
+  // Onboarding progress for a logged-in player (guides toward bet → pay)
+  const myBid = profile ? await getMyBid(round.id, profile.id) : null;
+  const progressStep: 1 | 2 | 3 | null =
+    profile && !settled ? (!myBid ? 1 : !myBid.paid ? 2 : 3) : null;
 
   const dashParties: DashParty[] = data.parties.map((p) => ({
     id: p.id,
@@ -110,7 +118,11 @@ export default async function HomePage() {
           ))}
       </div>
 
+      <OnboardingModal />
+
       <StatusBanner round={round} />
+
+      {progressStep !== null && <ProgressSteps step={progressStep} />}
 
       <HowItWorks />
 
