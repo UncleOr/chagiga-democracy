@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveRound, getParties } from "@/lib/data";
 import { amountDue } from "@/lib/calc";
+import { sendEmail, paymentEmailHtml } from "@/lib/email";
 
 export interface SubmitBidResult {
   ok: boolean;
@@ -103,6 +104,16 @@ export async function submitBid(_prev: unknown, formData: FormData): Promise<Sub
   await admin.from("bid_passfail").delete().eq("bid_id", bidId);
   if (passfail.length)
     await admin.from("bid_passfail").insert(passfail.map((s) => ({ bid_id: bidId, ...s })));
+
+  // Email the payment link + amount on first submission (no-ops without RESEND_API_KEY).
+  if (!existing && profile.email) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://chagiga-democracy-swart.vercel.app";
+    await sendEmail({
+      to: profile.email,
+      subject: "ההימור נקלט — נותר לשלם 💳",
+      html: paymentEmailHtml({ nickname, amount: amount_due, payboxUrl: round.paybox_url, siteUrl }),
+    });
+  }
 
   revalidatePath("/");
   revalidatePath("/me");

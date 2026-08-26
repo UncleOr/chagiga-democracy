@@ -9,6 +9,7 @@ export interface DashParty {
   nickname: string;
   is_swing: boolean;
   bloc: BlocKey | null;
+  poll_seats: number | null;
   actual_seats: number | null;
 }
 
@@ -226,42 +227,79 @@ function AveragePoll({ parties, rows }: { parties: DashParty[]; rows: DashRow[] 
       .sort((a, b) => b.avg - a.avg);
   }, [parties, rows]);
 
-  const max = Math.max(1, ...poll.map((x) => x.avg));
+  const hasPolls = poll.some((x) => x.p.poll_seats != null);
+  const max = Math.max(1, ...poll.map((x) => Math.max(x.avg, x.p.poll_seats ?? 0)));
   const blocAvg: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
-  for (const { p, avg } of poll) if (p.bloc) blocAvg[p.bloc] += avg;
+  const blocPoll: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
+  for (const { p, avg } of poll)
+    if (p.bloc) {
+      blocAvg[p.bloc] += avg;
+      blocPoll[p.bloc] += p.poll_seats ?? 0;
+    }
 
   return (
     <div className="card space-y-4 p-5">
-      <div className="flex flex-wrap gap-2">
+      {/* Bloc totals: participants avg vs news polls */}
+      <div className="grid gap-2 sm:grid-cols-3">
         {BLOCS.map((b) => (
-          <span
-            key={b.key}
-            className="rounded-lg px-3 py-1.5 text-sm font-bold"
-            style={{ background: `${b.color}14`, color: b.color }}
-          >
-            {b.label}: {blocAvg[b.key].toFixed(1)}
-          </span>
-        ))}
-      </div>
-      <div className="space-y-2">
-        {poll.map(({ p, avg }) => (
-          <div key={p.id} className="flex items-center gap-3">
-            <div className="w-28 shrink-0 truncate text-sm text-slate-600" title={p.nickname}>
-              {p.nickname}
+          <div key={b.key} className="rounded-xl px-3 py-2" style={{ background: `${b.color}10` }}>
+            <div className="text-xs font-semibold" style={{ color: b.color }}>
+              {b.label}
             </div>
-            <div className="h-6 flex-1 overflow-hidden rounded-lg bg-slate-100">
-              <div
-                className="flex h-full items-center justify-end rounded-lg px-2 text-xs font-bold text-white transition-all"
-                style={{ width: `${Math.max((avg / max) * 100, 6)}%`, background: blocColor(p.bloc) }}
-              >
-                {avg.toFixed(1)}
-              </div>
+            <div className="mt-0.5 flex items-baseline gap-2 text-sm">
+              <span className="font-extrabold" style={{ color: b.color }}>
+                {blocAvg[b.key].toFixed(1)}
+              </span>
+              <span className="text-slate-400">משתתפים</span>
+              {hasPolls && <span className="text-slate-300">·</span>}
+              {hasPolls && <span className="font-semibold text-slate-500">{blocPoll[b.key]} סקר</span>}
             </div>
           </div>
         ))}
       </div>
+
+      {hasPolls && (
+        <div className="flex items-center justify-end gap-4 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-4 rounded" style={{ background: "#94a3b8" }} /> ההימורים (ממוצע)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-0.5 bg-slate-800" /> סקרי החדשות
+          </span>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {poll.map(({ p, avg }) => (
+          <div key={p.id} className="flex items-center gap-3">
+            <div className="w-24 shrink-0 truncate text-sm text-slate-600 sm:w-28" title={p.nickname}>
+              {p.nickname}
+            </div>
+            <div className="relative h-6 flex-1 overflow-visible rounded-lg bg-slate-100">
+              <div
+                className="flex h-full items-center justify-end rounded-lg px-2 text-xs font-bold text-white transition-all"
+                style={{ width: `${Math.max((avg / max) * 100, 7)}%`, background: blocColor(p.bloc) }}
+              >
+                {avg.toFixed(1)}
+              </div>
+              {p.poll_seats != null && (
+                <span
+                  className="absolute top-[-2px] h-[28px] w-0.5 bg-slate-800"
+                  style={{ insetInlineStart: `${(p.poll_seats / max) * 100}%` }}
+                  title={`סקר: ${p.poll_seats}`}
+                />
+              )}
+            </div>
+            {p.poll_seats != null && (
+              <span className="w-9 shrink-0 text-left text-xs font-semibold text-slate-500 tabular-nums">
+                {p.poll_seats}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
       <p className="text-center text-xs text-slate-400">
-        ממוצע המנדטים לכל מפלגה לפי {rows.length} ההימורים · צבע לפי גוש
+        עמודה צבעונית = ממוצע {rows.length} ההימורים · קו כהה + מספר = סקרי החדשות העדכניים
       </p>
     </div>
   );

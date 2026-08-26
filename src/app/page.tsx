@@ -11,6 +11,7 @@ import { PotsBar } from "@/components/PotsBar";
 import { StatusBanner } from "@/components/StatusBanner";
 import { Dashboard, type DashRow, type DashParty } from "@/components/Dashboard";
 import { HowItWorks } from "@/components/HowItWorks";
+import { ShareButtons } from "@/components/ShareButtons";
 import { ResultsStrip } from "@/components/ResultsStrip";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export default async function HomePage() {
     nickname: p.nickname,
     is_swing: p.is_swing,
     bloc: p.bloc,
+    poll_seats: p.poll_seats,
     actual_seats: p.actual_seats,
   }));
 
@@ -141,6 +143,15 @@ export default async function HomePage() {
         <p className="mt-3 text-xs text-slate-400">
           ההימורים והכינויים גלויים לכל המשתתפים (תקנון 2.6). כתובות מייל אינן נחשפות.
         </p>
+      </div>
+
+      {/* Invite friends */}
+      <div className="card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-l from-brand-50 to-transparent p-5">
+        <div>
+          <div className="font-extrabold">כיף בחברה 🎉</div>
+          <div className="text-sm text-slate-500">ככל שיותר חברים משחקים — הקופה גדולה יותר. שתפו!</div>
+        </div>
+        <ShareButtons />
       </div>
     </div>
   );

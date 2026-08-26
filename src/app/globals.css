@@ -53,6 +53,24 @@ body {
   }
 }
 
+/* ── Animations & polish ─────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@layer components {
+  .card {
+    @apply transition-shadow duration-200;
+  }
+}
+/* gentle entrance for the main content */
+main > * {
+  animation: fadeIn 0.35s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  main > *, .animate-\[fadeIn_\.4s_ease\] { animation: none !important; }
+}
+
 /* number inputs: hide spinners for cleaner seat entry */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

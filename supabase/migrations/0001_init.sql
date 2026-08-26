@@ -50,6 +50,7 @@ create table if not exists public.parties (
   display_order int not null default 0,
   is_swing boolean not null default false,
   bloc text check (bloc in ('coalition','change','arab')),  -- political bloc (live bloc meter)
+  poll_seats int,                       -- latest news-poll estimate (dashboard reference)
   actual_seats int,
   actual_passed boolean
 );

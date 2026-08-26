@@ -80,7 +80,7 @@ export function BetForm({
       setMsg(res.error ?? "שגיאה");
       return;
     }
-    router.push("/me");
+    router.push("/me?submitted=1");
     router.refresh();
   }
 

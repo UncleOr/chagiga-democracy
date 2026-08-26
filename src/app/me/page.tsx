@@ -4,14 +4,29 @@ import { getActiveRound, getParties, getMyBid, getRoundData, settleRoundData } f
 import { ilsShort } from "@/lib/format";
 import { ClaimPaidButton } from "@/components/ClaimPaidButton";
 import { NicknameCard } from "@/components/NicknameCard";
+import { ShareButtons } from "@/components/ShareButtons";
 
-export default async function MePage() {
+export default async function MePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ submitted?: string }>;
+}) {
   const profile = await requireUser();
   const round = await getActiveRound();
+  const { submitted } = await searchParams;
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <h1 className="text-2xl font-extrabold">האזור האישי</h1>
+      {submitted && (
+        <div className="animate-[fadeIn_.4s_ease] rounded-2xl border border-green-200 bg-green-50 p-4 text-center">
+          <div className="text-3xl">🎉</div>
+          <div className="mt-1 text-lg font-extrabold text-green-800">ההימור נקלט!</div>
+          <div className="text-sm text-green-700/80">
+            נותר רק לשלם כדי להיות משתתפים פעילים — הפרטים למטה.
+          </div>
+        </div>
+      )}
       <NicknameCard current={profile.display_name} />
       {!round ? (
         <div className="card p-8 text-center text-slate-500">אין סבב פעיל כרגע.</div>
@@ -113,6 +128,11 @@ async function BetSection({ roundId, userId }: { roundId: string; userId: string
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+        <div className="text-sm font-semibold text-slate-600">אהבתם? הביאו חברים 👇</div>
+        <ShareButtons label="" compact />
       </div>
     </>
   );

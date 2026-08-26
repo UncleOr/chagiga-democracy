@@ -57,6 +57,10 @@ export default async function AdminParties({
                 <input name="nickname" defaultValue={p.nickname} className="input" />
               </div>
               <BlocSelect value={p.bloc} />
+              <div className="w-20">
+                <label className="label text-xs">סקר</label>
+                <input name="poll_seats" type="number" defaultValue={p.poll_seats ?? ""} placeholder="—" className="input text-center" />
+              </div>
               <label className="chip mb-1 cursor-pointer border-slate-200">
                 <input type="checkbox" name="is_swing" defaultChecked={p.is_swing} className="accent-brand-600" />
                 מתנדנדת
@@ -85,6 +89,10 @@ export default async function AdminParties({
           <input name="nickname" placeholder="כינוי קצר" className="input" />
         </div>
         <BlocSelect value={null} />
+        <div className="w-20">
+          <label className="label text-xs">סקר</label>
+          <input name="poll_seats" type="number" placeholder="—" className="input text-center" />
+        </div>
         <label className="chip mb-1 cursor-pointer border-slate-200">
           <input type="checkbox" name="is_swing" className="accent-brand-600" />
           מתנדנדת

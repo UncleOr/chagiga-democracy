@@ -37,6 +37,7 @@ export interface Party {
   display_order: number;
   is_swing: boolean; // מתנדנדת — participates in "עוברת או לא"
   bloc: BlocKey | null; // political bloc for the live bloc meter
+  poll_seats: number | null; // latest news-poll estimate (reference in dashboard)
   actual_seats: number | null; // filled after election
   actual_passed: boolean | null; // for swing parties
 }
