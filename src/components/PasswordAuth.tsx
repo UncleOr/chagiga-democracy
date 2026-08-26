@@ -12,6 +12,7 @@ export function PasswordAuth({ next }: { next?: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -26,6 +27,8 @@ export function PasswordAuth({ next }: { next?: string }) {
     try {
       if (mode === "signup") {
         if (name.trim().length < 2) throw new Error("יש להזין שם או כינוי (לפחות 2 תווים).");
+        if (password.length < 6) throw new Error("הסיסמה חייבת להכיל לפחות 6 תווים.");
+        if (password !== password2) throw new Error("הסיסמאות אינן תואמות.");
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -108,8 +111,23 @@ export function PasswordAuth({ next }: { next?: string }) {
           dir="ltr"
         />
       </div>
+      {mode === "signup" && (
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-slate-600">אימות סיסמה</label>
+          <input
+            type="password"
+            required
+            value={password2}
+            onChange={(e) => setPassword2(e.target.value)}
+            placeholder="הקלידו שוב את הסיסמה"
+            className={`input ${password2 && password2 !== password ? "border-red-300" : ""}`}
+            autoComplete="new-password"
+            dir="ltr"
+          />
+        </div>
+      )}
 
-      {err && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}
+      {err &&<p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}
       {info && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{info}</p>}
 
       <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base">

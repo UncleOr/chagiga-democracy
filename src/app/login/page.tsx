@@ -1,4 +1,5 @@
 import { PasswordAuth } from "@/components/PasswordAuth";
+import { GoogleSignIn } from "@/components/GoogleSignIn";
 import { getProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -28,8 +29,16 @@ export default async function LoginPage({
         )}
 
         <div className="mt-6">
-          <PasswordAuth next={next} />
+          <GoogleSignIn next={next} />
         </div>
+
+        <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          או עם אימייל וסיסמה
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+
+        <PasswordAuth next={next} />
 
         <p className="mt-6 text-center text-xs text-slate-400">
           לא נפרסם את כתובת המייל שלכם. בטבלה יוצג רק הכינוי שבחרתם.
