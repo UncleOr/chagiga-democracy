@@ -140,3 +140,36 @@ export async function setUserBanned(userId: string, value: boolean) {
   await admin.from("profiles").update({ banned: value }).eq("id", userId);
   revalidatePath("/admin/users");
 }
+
+/** Delete a user's bid(s) so they can start over (cascades predictions). */
+export async function resetUserBid(userId: string) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await admin.from("bids").delete().eq("user_id", userId);
+  refreshAll();
+}
+
+/** Permanently delete a user — removes the auth account, which cascades to profile + bids. */
+export async function deleteUser(userId: string) {
+  const me = await requireAdmin();
+  if (me.id === userId) return; // never delete yourself
+  const admin = createAdminClient();
+  await admin.auth.admin.deleteUser(userId);
+  await admin.from("profiles").delete().eq("id", userId); // in case no auth row
+  refreshAll();
+}
+
+/** Send a password-reset email to the user. */
+export async function resetUserPassword(userId: string) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { data } = await admin.from("profiles").select("email").eq("id", userId).maybeSingle();
+  if (!data?.email) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://chagiga-democracy-swart.vercel.app";
+  await anon.auth.resetPasswordForEmail(data.email, {
+    redirectTo: `${site}/auth/callback?next=/reset-password`,
+  });
+  revalidatePath("/admin/users");
+}

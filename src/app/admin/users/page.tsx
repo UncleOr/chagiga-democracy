@@ -1,6 +1,13 @@
 import { getAllProfiles } from "@/lib/data";
 import { getProfile } from "@/lib/auth";
-import { setUserAdmin, setUserBanned } from "@/lib/actions/admin";
+import {
+  setUserAdmin,
+  setUserBanned,
+  resetUserBid,
+  deleteUser,
+  resetUserPassword,
+} from "@/lib/actions/admin";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { dateHe } from "@/lib/format";
 
 export default async function AdminUsers() {
@@ -43,20 +50,39 @@ export default async function AdminUsers() {
                     {isSelf ? (
                       <span className="text-xs text-slate-300">(אתה)</span>
                     ) : (
-                      <div className="flex justify-end gap-2">
+                      <div className="flex flex-wrap justify-end gap-1.5">
                         <form action={setUserAdmin.bind(null, p.id, !p.is_admin)}>
-                          <button className="btn-ghost">{p.is_admin ? "הסרת ניהול" : "הפיכה למנהל"}</button>
+                          <button className="btn-ghost !px-2.5 !py-1 text-xs">
+                            {p.is_admin ? "הסרת ניהול" : "הפיכה למנהל"}
+                          </button>
+                        </form>
+                        <form action={resetUserPassword.bind(null, p.id)}>
+                          <button className="btn-ghost !px-2.5 !py-1 text-xs">איפוס סיסמה</button>
                         </form>
                         <form action={setUserBanned.bind(null, p.id, !p.banned)}>
                           <button
-                            className={
-                              p.banned
-                                ? "btn-ghost"
-                                : "btn-ghost border-red-200 text-red-500 hover:bg-red-50"
-                            }
+                            className={`btn-ghost !px-2.5 !py-1 text-xs ${
+                              p.banned ? "" : "border-amber-200 text-amber-600 hover:bg-amber-50"
+                            }`}
                           >
-                            {p.banned ? "שחרור חסימה" : "חסימה"}
+                            {p.banned ? "ביטול השעיה" : "השעיה"}
                           </button>
+                        </form>
+                        <form action={resetUserBid.bind(null, p.id)}>
+                          <ConfirmSubmit
+                            confirmText={`לאפס (למחוק) את ההימור של ${p.display_name || p.email}? הפעולה אינה הפיכה.`}
+                            className="btn-ghost !px-2.5 !py-1 text-xs"
+                          >
+                            איפוס הימור
+                          </ConfirmSubmit>
+                        </form>
+                        <form action={deleteUser.bind(null, p.id)}>
+                          <ConfirmSubmit
+                            confirmText={`למחוק לצמיתות את ${p.display_name || p.email} כולל ההימור? הפעולה אינה הפיכה.`}
+                            className="btn-ghost !px-2.5 !py-1 text-xs border-red-200 text-red-500 hover:bg-red-50"
+                          >
+                            מחיקה
+                          </ConfirmSubmit>
                         </form>
                       </div>
                     )}

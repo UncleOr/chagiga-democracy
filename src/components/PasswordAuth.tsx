@@ -71,6 +71,22 @@ export function PasswordAuth({ next }: { next?: string }) {
     }
   }
 
+  async function forgot() {
+    setErr(null);
+    setInfo(null);
+    if (!email.trim()) {
+      setErr("הזינו אימייל למעלה ואז לחצו ״שכחתי סיסמה״.");
+      return;
+    }
+    const supabase = createClient();
+    const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${base}/auth/callback?next=/reset-password`,
+    });
+    if (error) setErr(error.message);
+    else setInfo("נשלח מייל לאיפוס סיסמה. בדקו גם בתיקיית הספאם.");
+  }
+
   return (
     <form onSubmit={submit} className="space-y-3 text-right">
       {mode === "signup" && (
@@ -133,6 +149,14 @@ export function PasswordAuth({ next }: { next?: string }) {
       <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base">
         {loading ? "רגע..." : mode === "signup" ? "הרשמה" : "התחברות"}
       </button>
+
+      {mode === "signin" && (
+        <div className="text-center">
+          <button type="button" onClick={forgot} className="text-xs text-slate-400 hover:underline">
+            שכחתי סיסמה
+          </button>
+        </div>
+      )}
 
       <p className="pt-1 text-center text-sm text-slate-500">
         {mode === "signup" ? "כבר יש לכם חשבון?" : "עדיין אין לכם חשבון?"}{" "}
