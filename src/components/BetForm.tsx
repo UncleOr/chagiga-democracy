@@ -102,13 +102,15 @@ export function BetForm({
                   low ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-slate-50/50"
                 }`}
               >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  {p.nickname}
-                  {p.is_swing && (
-                    <span className="badge bg-brand-50 text-brand-600" title="מפלגה מתנדנדת">
-                      מתנדנדת
-                    </span>
-                  )}
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex items-center gap-2 text-sm font-medium leading-tight">
+                    {p.name}
+                    {p.is_swing && (
+                      <span className="badge shrink-0 bg-brand-50 text-brand-600" title="מפלגה מתנדנדת">
+                        מתנדנדת
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <input
                   type="number"
