@@ -49,6 +49,7 @@ create table if not exists public.parties (
   nickname text not null,
   display_order int not null default 0,
   is_swing boolean not null default false,
+  bloc text check (bloc in ('coalition','change','arab')),  -- political bloc (live bloc meter)
   actual_seats int,
   actual_passed boolean
 );

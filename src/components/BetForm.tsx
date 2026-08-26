@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { submitBid } from "@/lib/actions/bid";
 import { ilsShort } from "@/lib/format";
-import type { Party, Round } from "@/lib/types";
+import { BLOCS, type Party, type Round } from "@/lib/types";
 import type { MyBid } from "@/lib/data";
 
 const TOTAL_SEATS = 120;
@@ -51,6 +51,14 @@ export function BetForm({
     () => parties.reduce((s, p) => s + (parseInt(seats[p.id] || "0", 10) || 0), 0),
     [seats, parties],
   );
+  const blocSums = useMemo(() => {
+    const s: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
+    for (const p of parties) {
+      if (!p.bloc) continue;
+      s[p.bloc] += parseInt(seats[p.id] || "0", 10) || 0;
+    }
+    return s;
+  }, [seats, parties]);
   const lowSeatParties = useMemo(
     () =>
       parties.filter((p) => {
@@ -89,6 +97,22 @@ export function BetForm({
           >
             סה"כ {sum} / {TOTAL_SEATS}
           </div>
+        </div>
+
+        {/* Live bloc meter — helps gauge against the bloc map while filling */}
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          {BLOCS.map((b) => (
+            <div
+              key={b.key}
+              className="rounded-xl border px-2 py-2 text-center"
+              style={{ borderColor: `${b.color}55`, background: `${b.color}0d` }}
+            >
+              <div className="text-[11px] font-medium text-slate-500">{b.label}</div>
+              <div className="text-xl font-extrabold tabular-nums" style={{ color: b.color }}>
+                {blocSums[b.key]}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

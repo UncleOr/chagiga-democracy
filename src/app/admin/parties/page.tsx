@@ -1,6 +1,23 @@
 import Link from "next/link";
 import { getAllRounds, getParties } from "@/lib/data";
 import { upsertParty, deleteParty } from "@/lib/actions/admin";
+import { BLOCS, type BlocKey } from "@/lib/types";
+
+function BlocSelect({ value }: { value: BlocKey | null }) {
+  return (
+    <div className="min-w-[8rem]">
+      <label className="label text-xs">גוש</label>
+      <select name="bloc" defaultValue={value ?? ""} className="input">
+        <option value="">— ללא —</option>
+        {BLOCS.map((b) => (
+          <option key={b.key} value={b.key}>
+            {b.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 export default async function AdminParties({
   searchParams,
@@ -39,6 +56,7 @@ export default async function AdminParties({
                 <label className="label text-xs">כינוי בטבלה</label>
                 <input name="nickname" defaultValue={p.nickname} className="input" />
               </div>
+              <BlocSelect value={p.bloc} />
               <label className="chip mb-1 cursor-pointer border-slate-200">
                 <input type="checkbox" name="is_swing" defaultChecked={p.is_swing} className="accent-brand-600" />
                 מתנדנדת
@@ -66,6 +84,7 @@ export default async function AdminParties({
           <label className="label text-xs">כינוי בטבלה</label>
           <input name="nickname" placeholder="כינוי קצר" className="input" />
         </div>
+        <BlocSelect value={null} />
         <label className="chip mb-1 cursor-pointer border-slate-200">
           <input type="checkbox" name="is_swing" className="accent-brand-600" />
           מתנדנדת

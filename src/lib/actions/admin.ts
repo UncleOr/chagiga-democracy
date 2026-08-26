@@ -68,12 +68,14 @@ export async function upsertParty(formData: FormData) {
   const nickname = String(formData.get("nickname") ?? "").trim() || name;
   const is_swing = formData.get("is_swing") === "on";
   const display_order = Number(formData.get("display_order") ?? 0) || 0;
+  const blocRaw = String(formData.get("bloc") ?? "").trim();
+  const bloc = ["coalition", "change", "arab"].includes(blocRaw) ? blocRaw : null;
   if (!name) return;
 
   if (id) {
-    await admin.from("parties").update({ name, nickname, is_swing, display_order }).eq("id", id);
+    await admin.from("parties").update({ name, nickname, is_swing, display_order, bloc }).eq("id", id);
   } else {
-    await admin.from("parties").insert({ round_id, name, nickname, is_swing, display_order });
+    await admin.from("parties").insert({ round_id, name, nickname, is_swing, display_order, bloc });
   }
   revalidatePath("/admin/parties");
   revalidatePath("/");

@@ -36,9 +36,18 @@ export interface Party {
   nickname: string; // short display name
   display_order: number;
   is_swing: boolean; // מתנדנדת — participates in "עוברת או לא"
+  bloc: BlocKey | null; // political bloc for the live bloc meter
   actual_seats: number | null; // filled after election
   actual_passed: boolean | null; // for swing parties
 }
+
+export type BlocKey = "coalition" | "change" | "arab";
+
+export const BLOCS: { key: BlocKey; label: string; color: string }[] = [
+  { key: "coalition", label: "הקואליציה", color: "#1e40f5" },
+  { key: "change", label: "גוש השינוי", color: "#0ea5e9" },
+  { key: "arab", label: "המפלגות הערביות", color: "#10b981" },
+];
 
 export interface Bid {
   id: string;

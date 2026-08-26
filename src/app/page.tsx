@@ -9,7 +9,8 @@ import {
 } from "@/lib/data";
 import { PotsBar } from "@/components/PotsBar";
 import { StatusBanner } from "@/components/StatusBanner";
-import { StandingsTable, type StandingRow } from "@/components/StandingsTable";
+import { Dashboard, type DashRow, type DashParty } from "@/components/Dashboard";
+import { HowItWorks } from "@/components/HowItWorks";
 import { ResultsStrip } from "@/components/ResultsStrip";
 
 export const dynamic = "force-dynamic";
@@ -40,9 +41,17 @@ export default async function HomePage() {
   const settled = round.status === "settled";
   const settlement = resultsExist ? settleRoundData(data, { onlyPaid: true }) : null;
 
-  // Build standings rows
+  const dashParties: DashParty[] = data.parties.map((p) => ({
+    id: p.id,
+    nickname: p.nickname,
+    is_swing: p.is_swing,
+    bloc: p.bloc,
+    actual_seats: p.actual_seats,
+  }));
+
+  // Build dashboard rows (each carries the participant's full predictions)
   const bidByNick = new Map(data.bids.map((b) => [b.nickname, b]));
-  let rows: StandingRow[];
+  let rows: DashRow[];
   if (settlement) {
     rows = settlement.results.map((r) => {
       const b = bidByNick.get(r.nickname);
@@ -53,6 +62,8 @@ export default async function HomePage() {
         has_passfail: b?.has_passfail ?? false,
         paid: b?.paid ?? false,
         frozen: b?.frozen ?? false,
+        seats: b?.seats ?? {},
+        passfail: b?.passfail ?? {},
         totalDelta: r.totalDelta,
         snipes: r.snipes,
         correctPassfail: r.correctPassfail,
@@ -70,6 +81,8 @@ export default async function HomePage() {
       has_passfail: b.has_passfail,
       paid: b.paid,
       frozen: b.frozen,
+      seats: b.seats,
+      passfail: b.passfail,
     }));
   }
 
@@ -79,7 +92,9 @@ export default async function HomePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold">{round.name}</h1>
-          <p className="text-sm text-slate-500">חגיגה של דמוקרטיה · משחק ניחושי הבחירות</p>
+          <p className="text-sm text-slate-500">
+            חגיגה של דמוקרטיה · מנחשים את הבחירות, מהמרים עם חברים, והזוכים לוקחים את הקופה 🗳️
+          </p>
         </div>
         {round.status === "open" &&
           (profile ? (
@@ -94,6 +109,8 @@ export default async function HomePage() {
       </div>
 
       <StatusBanner round={round} />
+
+      <HowItWorks />
 
       {/* Election results strip (when entered) */}
       {resultsExist && <ResultsStrip parties={data.parties} />}
@@ -120,7 +137,7 @@ export default async function HomePage() {
             <span className="text-sm text-slate-400">{pots.participants} משתתפים פעילים</span>
           )}
         </div>
-        <StandingsTable rows={rows} showResults={resultsExist} showWinnings={settled} />
+        <Dashboard parties={dashParties} rows={rows} showResults={resultsExist} showWinnings={settled} />
         <p className="mt-3 text-xs text-slate-400">
           ההימורים והכינויים גלויים לכל המשתתפים (תקנון 2.6). כתובות מייל אינן נחשפות.
         </p>
