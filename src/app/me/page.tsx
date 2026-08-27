@@ -5,6 +5,8 @@ import { ilsShort } from "@/lib/format";
 import { ClaimPaidButton } from "@/components/ClaimPaidButton";
 import { NicknameCard } from "@/components/NicknameCard";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { resetMyBid, deleteMyAccount } from "@/lib/actions/profile";
 
 export default async function MePage({
   searchParams,
@@ -33,7 +35,41 @@ export default async function MePage({
       ) : (
         <BetSection roundId={round.id} userId={profile.id} />
       )}
+
+      <AccountCard />
     </div>
+  );
+}
+
+function AccountCard() {
+  return (
+    <details className="card group overflow-hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+        <span className="font-bold text-slate-600">⚙️ הגדרות חשבון</span>
+        <span className="text-sm text-slate-400 transition group-open:rotate-180">▾</span>
+      </summary>
+      <div className="flex flex-wrap gap-2 px-5 pb-5">
+        <Link href="/reset-password" className="btn-ghost">
+          שינוי סיסמה
+        </Link>
+        <form action={resetMyBid}>
+          <ConfirmSubmit
+            confirmText="לאפס (למחוק) את ההימור שלך? תוכל להמר מחדש. הפעולה אינה הפיכה."
+            className="btn-ghost"
+          >
+            איפוס ההימור שלי
+          </ConfirmSubmit>
+        </form>
+        <form action={deleteMyAccount}>
+          <ConfirmSubmit
+            confirmText="למחוק לצמיתות את החשבון שלך כולל ההימור? הפעולה אינה הפיכה."
+            className="btn-ghost border-red-200 text-red-500 hover:bg-red-50"
+          >
+            מחיקת החשבון שלי
+          </ConfirmSubmit>
+        </form>
+      </div>
+    </details>
   );
 }
 

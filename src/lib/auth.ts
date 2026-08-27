@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import type { Profile } from "@/lib/types";
 
@@ -21,17 +22,26 @@ export async function getProfile(): Promise<Profile | null> {
 
   if (!profile) {
     // First login — create the profile. is_admin defaults from the bootstrap list (DB trigger).
+    let candidate: string | null =
+      (user.user_metadata?.display_name as string) ??
+      (user.user_metadata?.full_name as string) ??
+      (user.user_metadata?.name as string) ??
+      null;
+
+    // Nicknames are unique — if this one is taken, leave it blank so the user picks a fresh one.
+    if (candidate) {
+      const admin = createAdminClient();
+      const { data: taken } = await admin
+        .from("profiles")
+        .select("id")
+        .ilike("display_name", candidate.trim())
+        .maybeSingle();
+      if (taken) candidate = null;
+    }
+
     const { data: created } = await supabase
       .from("profiles")
-      .insert({
-        id: user.id,
-        email: user.email,
-        display_name:
-          (user.user_metadata?.display_name as string) ??
-          (user.user_metadata?.full_name as string) ??
-          (user.user_metadata?.name as string) ??
-          null,
-      })
+      .insert({ id: user.id, email: user.email, display_name: candidate?.trim() ?? null })
       .select("*")
       .single();
     profile = created;
