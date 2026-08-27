@@ -45,9 +45,9 @@ export interface Party {
 export type BlocKey = "coalition" | "change" | "arab";
 
 export const BLOCS: { key: BlocKey; label: string; color: string }[] = [
-  { key: "coalition", label: "הקואליציה", color: "#1e40f5" },
-  { key: "change", label: "גוש השינוי", color: "#0ea5e9" },
-  { key: "arab", label: "המפלגות הערביות", color: "#10b981" },
+  { key: "coalition", label: "הקואליציה", color: "#294a6a" }, // navy
+  { key: "change", label: "גוש השינוי", color: "#2f9788" }, // turquoise
+  { key: "arab", label: "המפלגות הערביות", color: "#6d7f96" }, // steel
 ];
 
 export interface Bid {

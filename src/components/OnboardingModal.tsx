@@ -60,9 +60,9 @@ export function OnboardingModal() {
   const s = SLIDES[i];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-3 backdrop-blur-sm sm:items-center">
-      <div className="animate-[fadeIn_.3s_ease] w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm">
+      <div className="animate-[fadeIn_.3s_ease] max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
+        <div className="flex items-center justify-between">
           <div className="flex gap-1.5">
             {SLIDES.map((_, idx) => (
               <span
@@ -76,9 +76,9 @@ export function OnboardingModal() {
           </button>
         </div>
 
-        <div key={i} className="animate-[fadeIn_.3s_ease] py-6 text-center">
-          <div className="text-6xl">{s.emoji}</div>
-          <h2 className="mt-4 text-xl font-extrabold">{s.title}</h2>
+        <div key={i} className="animate-[fadeIn_.3s_ease] py-5 text-center">
+          <div className="text-5xl">{s.emoji}</div>
+          <h2 className="mt-3 text-lg font-extrabold sm:text-xl">{s.title}</h2>
           <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{s.text}</p>
         </div>
 

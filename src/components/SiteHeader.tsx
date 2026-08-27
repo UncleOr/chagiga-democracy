@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getProfile } from "@/lib/auth";
-import { SignOutButton } from "@/components/SignOutButton";
+import { HeaderNav } from "@/components/HeaderNav";
 
 export async function SiteHeader() {
   const profile = await getProfile();
@@ -13,36 +13,11 @@ export async function SiteHeader() {
           <span className="hidden sm:inline">חגיגה של דמוקרטיה</span>
         </Link>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
-          <Link href="/" className="btn-ghost border-0 hover:bg-slate-100">
-            טבלה
-          </Link>
-          <Link href="/takanon" className="btn-ghost border-0 hover:bg-slate-100">
-            תקנון
-          </Link>
-          {profile && (
-            <Link href="/me" className="btn-ghost border-0 hover:bg-slate-100">
-              ההימור שלי
-            </Link>
-          )}
-          {profile?.is_admin && (
-            <Link href="/admin" className="btn-ghost border-0 hover:bg-slate-100">
-              ניהול
-            </Link>
-          )}
-          {profile ? (
-            <div className="flex items-center gap-2">
-              <span className="hidden text-sm text-slate-500 sm:inline">
-                {profile.display_name || profile.email}
-              </span>
-              <SignOutButton />
-            </div>
-          ) : (
-            <Link href="/login" className="btn-primary">
-              התחברות
-            </Link>
-          )}
-        </nav>
+        <HeaderNav
+          isLoggedIn={!!profile}
+          isAdmin={!!profile?.is_admin}
+          name={profile?.display_name || profile?.email || null}
+        />
       </div>
     </header>
   );

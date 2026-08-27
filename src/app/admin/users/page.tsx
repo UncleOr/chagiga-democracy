@@ -1,4 +1,4 @@
-import { getAllProfiles } from "@/lib/data";
+import { getAllProfiles, getActiveRound, getAdminBids } from "@/lib/data";
 import { getProfile } from "@/lib/auth";
 import {
   setUserAdmin,
@@ -6,12 +6,15 @@ import {
   resetUserBid,
   deleteUser,
   resetUserPassword,
+  markPaid,
 } from "@/lib/actions/admin";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { dateHe } from "@/lib/format";
 
 export default async function AdminUsers() {
-  const [profiles, me] = await Promise.all([getAllProfiles(), getProfile()]);
+  const [profiles, me, round] = await Promise.all([getAllProfiles(), getProfile(), getActiveRound()]);
+  const bids = round ? await getAdminBids(round.id) : [];
+  const bidByEmail = new Map(bids.map((b) => [b.email, b]));
 
   return (
     <div className="space-y-4">
@@ -51,6 +54,22 @@ export default async function AdminUsers() {
                       <span className="text-xs text-slate-300">(אתה)</span>
                     ) : (
                       <div className="flex flex-wrap justify-end gap-1.5">
+                        {(() => {
+                          const b = bidByEmail.get(p.email);
+                          return b ? (
+                            <form action={markPaid.bind(null, b.id, !b.paid)}>
+                              <button
+                                className={`btn-ghost !px-2.5 !py-1 text-xs ${
+                                  b.paid
+                                    ? "border-green-200 text-green-600"
+                                    : "border-brand-300 text-brand-600"
+                                }`}
+                              >
+                                {b.paid ? "✓ שולם" : "סמן כשולם"}
+                              </button>
+                            </form>
+                          ) : null;
+                        })()}
                         <form action={setUserAdmin.bind(null, p.id, !p.is_admin)}>
                           <button className="btn-ghost !px-2.5 !py-1 text-xs">
                             {p.is_admin ? "הסרת ניהול" : "הפיכה למנהל"}

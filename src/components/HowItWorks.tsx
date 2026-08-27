@@ -25,7 +25,7 @@ const GAMES = [
 
 export function HowItWorks() {
   return (
-    <details className="card group overflow-hidden" open>
+    <details className="card group overflow-hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
         <span className="flex items-center gap-2 text-lg font-extrabold">
           <span>👋</span> ברוכים הבאים — ככה זה עובד

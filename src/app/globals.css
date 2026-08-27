@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f6f7fb;
+  --bg: #f3f5f8;
 }
 
 html,
@@ -14,10 +14,10 @@ body {
 
 body {
   background:
-    radial-gradient(1200px 500px at 100% -10%, #eaf0ff 0%, transparent 60%),
-    radial-gradient(1000px 500px at -10% 0%, #fff7e6 0%, transparent 55%),
+    radial-gradient(1200px 520px at 100% -10%, #e6eef6 0%, transparent 60%),
+    radial-gradient(1000px 520px at -10% 0%, #f3efe6 0%, transparent 55%),
     var(--bg);
-  color: #131b2e;
+  color: #16202e;
   min-height: 100dvh;
 }
 

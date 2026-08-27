@@ -8,22 +8,42 @@ export default {
         sans: ["var(--font-heebo)", "system-ui", "sans-serif"],
       },
       colors: {
+        // Stately navy-blue
         brand: {
-          50: "#eef4ff",
-          100: "#d9e6ff",
-          200: "#bcd3ff",
-          300: "#8eb6ff",
-          400: "#598dff",
-          500: "#3563ff",
-          600: "#1e40f5",
-          700: "#172fe1",
-          800: "#1929b6",
-          900: "#1b298f",
+          50: "#eff3f8",
+          100: "#dae5f0",
+          200: "#b6cade",
+          300: "#88a6c5",
+          400: "#5a80a6",
+          500: "#3a6087",
+          600: "#294a6a",
+          700: "#1f3852",
+          800: "#182c40",
+          900: "#122032",
         },
+        // Turquoise accent
+        teal: {
+          50: "#edf7f5",
+          100: "#d3ece8",
+          300: "#7fccc2",
+          400: "#4bb2a6",
+          500: "#2f9788",
+          600: "#237a6e",
+        },
+        // Warm beige / brass accent
+        sand: {
+          100: "#f5f0e6",
+          200: "#e9ddc7",
+          300: "#d8c39c",
+          400: "#c3a878",
+          500: "#a98d5e",
+          600: "#8a7248",
+        },
+        // Kept for existing usages — muted brass, not electric yellow
         gold: {
-          400: "#f5c518",
-          500: "#e0ac00",
-          600: "#b98a00",
+          400: "#c3a878",
+          500: "#a98d5e",
+          600: "#8a7248",
         },
       },
       boxShadow: {

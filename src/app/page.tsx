@@ -81,38 +81,38 @@ export default async function HomePage() {
       };
     });
   } else {
-    // No results yet — list paid participants (active), unpaid shown after.
-    const active = data.bids.filter((b) => b.paid);
-    const pending = data.bids.filter((b) => !b.paid);
-    rows = [...active, ...pending].map((b) => ({
-      nickname: b.nickname,
-      is_double: b.is_double,
-      has_sniper: b.has_sniper,
-      has_passfail: b.has_passfail,
-      paid: b.paid,
-      frozen: b.frozen,
-      seats: b.seats,
-      passfail: b.passfail,
-    }));
+    // Only paid bids count toward the public standings / averages.
+    rows = data.bids
+      .filter((b) => b.paid)
+      .map((b) => ({
+        nickname: b.nickname,
+        is_double: b.is_double,
+        has_sniper: b.has_sniper,
+        has_passfail: b.has_passfail,
+        paid: b.paid,
+        frozen: b.frozen,
+        seats: b.seats,
+        passfail: b.passfail,
+      }));
   }
 
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold">{round.name}</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-extrabold sm:text-3xl">{round.name}</h1>
+          <p className="mt-1 text-sm text-slate-500">
             חגיגה של דמוקרטיה · מנחשים את הבחירות, מהמרים עם חברים, והזוכים לוקחים את הקופה 🗳️
           </p>
         </div>
         {round.status === "open" &&
           (profile ? (
-            <Link href="/bet" className="btn-primary">
+            <Link href="/bet" className="btn-primary w-full py-3 text-base sm:w-auto sm:py-2.5">
               להימור →
             </Link>
           ) : (
-            <Link href="/login?next=/bet" className="btn-primary">
+            <Link href="/login?next=/bet" className="btn-primary w-full py-3 text-base sm:w-auto sm:py-2.5">
               התחברו והמרו →
             </Link>
           ))}

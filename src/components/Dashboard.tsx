@@ -217,8 +217,8 @@ function PredictionDetail({ party, row }: { party: DashParty[]; row: DashRow }) 
   );
 }
 
-const BET_COLOR = "#1e40f5"; // ממוצע ההימורים
-const POLL_COLOR = "#f5c518"; // סקרי החדשות
+const BET_COLOR = "#294a6a"; // ממוצע ההימורים (navy)
+const POLL_COLOR = "#c3a878"; // סקרי החדשות (brass)
 
 function AveragePoll({ parties, rows }: { parties: DashParty[]; rows: DashRow[] }) {
   const poll = useMemo(() => {
