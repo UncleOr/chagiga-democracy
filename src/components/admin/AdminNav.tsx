@@ -7,8 +7,7 @@ const TABS = [
   { href: "/admin", label: "סבב והגדרות" },
   { href: "/admin/parties", label: "מפלגות" },
   { href: "/admin/results", label: "תוצאות" },
-  { href: "/admin/payments", label: "תשלומים" },
-  { href: "/admin/users", label: "משתמשים" },
+  { href: "/admin/users", label: "משתמשים ותשלומים" },
 ];
 
 export function AdminNav() {

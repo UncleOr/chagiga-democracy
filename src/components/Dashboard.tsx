@@ -3,6 +3,12 @@
 import { Fragment, useMemo, useState } from "react";
 import { ilsShort } from "@/lib/format";
 import { BLOCS, type BlocKey } from "@/lib/types";
+import { settle, type CalcBid, type CalcConfig, type CalcParty } from "@/lib/calc";
+
+export interface DashScenario {
+  config: CalcConfig;
+  threshold: number; // seats needed to "pass" (electoral threshold in mandates)
+}
 
 export interface DashParty {
   id: string;
@@ -31,16 +37,29 @@ export interface DashRow {
 const blocColor = (b: BlocKey | null) => BLOCS.find((x) => x.key === b)?.color ?? "#94a3b8";
 const medal = (i: number) => ["🥇", "🥈", "🥉"][i] ?? (i + 1).toString();
 
+function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-xl px-3 py-2 ${accent ? "bg-brand-50" : "bg-white"}`}>
+      <div className="text-[11px] leading-tight text-slate-500">{label}</div>
+      <div className={`mt-0.5 truncate text-sm font-extrabold ${accent ? "text-brand-700" : "text-slate-700"}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({
   parties,
   rows,
   showResults,
   showWinnings,
+  scenario,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
   showWinnings: boolean;
+  scenario: DashScenario;
 }) {
   // Default to the overview ("מה המצב בינתיים"); switch to results/participants on demand.
   const [tab, setTab] = useState<"table" | "poll">("poll");
@@ -67,7 +86,13 @@ export function Dashboard({
       </div>
 
       {tab === "table" ? (
-        <ParticipantsTable parties={parties} rows={rows} showResults={showResults} showWinnings={showWinnings} />
+        <ParticipantsTable
+          parties={parties}
+          rows={rows}
+          showResults={showResults}
+          showWinnings={showWinnings}
+          scenario={scenario}
+        />
       ) : (
         <AveragePoll parties={parties} rows={rows} />
       )}
@@ -75,19 +100,86 @@ export function Dashboard({
   );
 }
 
+export interface BidMetrics {
+  potTotal: number;
+  pollTotal: number; // winnings if results = poll averages (with current bid)
+  perfectTotal: number; // winnings if this bid nailed the poll averages exactly
+  mostSimilar: string | null; // party nickname closest to everyone's average
+  mostDifferent: string | null; // party nickname furthest from everyone's average
+}
+
 function ParticipantsTable({
   parties,
   rows,
   showResults,
   showWinnings,
+  scenario,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
   showWinnings: boolean;
+  scenario: DashScenario;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const cols = 3 + (showResults ? 2 : 0) + 1;
+
+  // "What-if" projections using the news-poll averages as the assumed result.
+  const metricsByNick = useMemo(() => {
+    const { config, threshold } = scenario;
+    const pollParties: CalcParty[] = parties.map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      is_swing: p.is_swing,
+      actual_seats: p.poll_seats ?? 0,
+      actual_passed: p.is_swing ? (p.poll_seats ?? 0) >= threshold : null,
+    }));
+    const calcBids: CalcBid[] = rows.map((r) => ({
+      id: r.nickname,
+      nickname: r.nickname,
+      seats: r.seats,
+      passfail: r.passfail,
+      is_double: r.is_double,
+      has_sniper: r.has_sniper,
+      has_passfail: r.has_passfail,
+    }));
+    const perfectSeats = Object.fromEntries(pollParties.map((p) => [p.id, p.actual_seats]));
+    const perfectPf = Object.fromEntries(
+      pollParties.filter((p) => p.is_swing).map((p) => [p.id, p.actual_passed]),
+    );
+    const avg: Record<string, number> = {};
+    for (const p of parties) avg[p.id] = rows.reduce((a, r) => a + (r.seats[p.id] ?? 0), 0) / (rows.length || 1);
+
+    const base = settle(pollParties, calcBids, config);
+    const potTotal = base.pots.basicTotal + base.pots.sniperPot + base.pots.passfailPot;
+    const pollById = new Map(base.results.map((x) => [String(x.id), x.total]));
+
+    const out = new Map<string, BidMetrics>();
+    for (const r of rows) {
+      // perfect bid for this user (nailed the poll averages)
+      const perfectBids = calcBids.map((b) =>
+        b.id === r.nickname ? { ...b, seats: perfectSeats, passfail: perfectPf, has_sniper: true, has_passfail: true } : b,
+      );
+      const perfectTotal =
+        settle(pollParties, perfectBids, config).results.find((x) => String(x.id) === r.nickname)?.total ?? 0;
+      // most similar / different party vs everyone's average
+      let sim: { p: string; d: number } | null = null;
+      let dif: { p: string; d: number } | null = null;
+      for (const p of parties) {
+        const d = Math.abs((r.seats[p.id] ?? 0) - avg[p.id]);
+        if (sim === null || d < sim.d) sim = { p: p.nickname, d };
+        if (dif === null || d > dif.d) dif = { p: p.nickname, d };
+      }
+      out.set(r.nickname, {
+        potTotal,
+        pollTotal: pollById.get(r.nickname) ?? 0,
+        perfectTotal,
+        mostSimilar: sim?.p ?? null,
+        mostDifferent: dif?.p ?? null,
+      });
+    }
+    return out;
+  }, [parties, rows, scenario]);
 
   return (
     <div className="card overflow-hidden">
@@ -155,7 +247,7 @@ function ParticipantsTable({
                   {isOpen && (
                     <tr className="border-b border-slate-100 bg-slate-50/60">
                       <td colSpan={cols} className="px-4 py-4">
-                        <PredictionDetail party={parties} row={r} />
+                        <PredictionDetail party={parties} row={r} metrics={metricsByNick.get(r.nickname)} />
                       </td>
                     </tr>
                   )}
@@ -172,13 +264,30 @@ function ParticipantsTable({
   );
 }
 
-function PredictionDetail({ party, row }: { party: DashParty[]; row: DashRow }) {
+function PredictionDetail({
+  party,
+  row,
+  metrics,
+}: {
+  party: DashParty[];
+  row: DashRow;
+  metrics?: BidMetrics;
+}) {
   const blocSums: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
   for (const p of party) if (p.bloc) blocSums[p.bloc] += row.seats[p.id] ?? 0;
   const total = party.reduce((s, p) => s + (row.seats[p.id] ?? 0), 0);
 
   return (
     <div className="space-y-3">
+      {metrics && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Stat label="בקופה כרגע" value={ilsShort(metrics.potTotal)} />
+          <Stat label="זכייה אם התוצאות כמו הסקרים" value={ilsShort(metrics.pollTotal)} accent />
+          <Stat label="זכייה אם היית מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
+          <Stat label="הכי דומה לכולם" value={metrics.mostSimilar ?? "—"} />
+          <Stat label="הכי שונה מכולם" value={metrics.mostDifferent ?? "—"} />
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {BLOCS.map((b) => (
           <span

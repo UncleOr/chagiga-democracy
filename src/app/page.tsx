@@ -124,7 +124,25 @@ export default async function HomePage() {
             <ResultsStrip parties={data.parties} />
           </div>
         )}
-        <Dashboard parties={dashParties} rows={rows} showResults={resultsExist} showWinnings={settled} />
+        <Dashboard
+          parties={dashParties}
+          rows={rows}
+          showResults={resultsExist}
+          showWinnings={settled}
+          scenario={{
+            threshold: round.threshold_pct,
+            config: {
+              base_bet: round.base_bet,
+              double_cost: round.double_cost,
+              sniper_cost: round.sniper_cost,
+              passfail_cost: round.passfail_cost,
+              gold_first: round.gold_first_pct,
+              gold_second: round.gold_second_pct,
+              sniper_first: round.sniper_first_pct,
+              sniper_second: round.sniper_second_pct,
+            },
+          }}
+        />
         {settled && settlement && settlement.remainder > 0.01 && (
           <p className="mt-3 rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-400">
             יתרה שלא חולקה: {settlement.remainder.toFixed(2)} ₪ — מועברת לפי שיקול דעת המארגנים (תקנון 1.7).
