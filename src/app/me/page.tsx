@@ -6,6 +6,7 @@ import { ClaimPaidButton } from "@/components/ClaimPaidButton";
 import { NicknameCard } from "@/components/NicknameCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
+import { Confetti } from "@/components/Confetti";
 import { resetMyBid, deleteMyAccount } from "@/lib/actions/profile";
 
 export default async function MePage({
@@ -20,6 +21,7 @@ export default async function MePage({
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <h1 className="text-2xl font-extrabold">האזור האישי</h1>
+      {submitted && <Confetti />}
       {submitted && (
         <div className="animate-[fadeIn_.4s_ease] rounded-2xl border border-green-200 bg-green-50 p-4 text-center">
           <div className="text-3xl">🎉</div>
