@@ -231,10 +231,27 @@ export function settleRoundData(data: RoundData, opts?: { onlyPaid?: boolean }):
   return settle(data.parties.map(toCalcParty), bids.map(toCalcBid), roundToConfig(data.round));
 }
 
+export interface WinBreakdown {
+  mandate: number;
+  gold: number;
+  sniper: number;
+  passfail: number;
+}
+export interface PartyCompare {
+  party: string;
+  mine: number; // my predicted seats
+  avg: number; // everyone's average for this party
+  samePct: number; // % of the pool who predicted exactly like me
+  count: number; // pool size
+}
 export interface PollMetrics {
   potTotal: number;
   pollTotal: number; // winnings if results = poll averages (with current bid)
   perfectTotal: number; // winnings if this bid nailed the poll averages exactly
+  pollBreakdown: WinBreakdown;
+  perfectBreakdown: WinBreakdown;
+  similar: PartyCompare | null;
+  different: PartyCompare | null;
   mostSimilar: string | null;
   mostDifferent: string | null;
 }
@@ -272,9 +289,15 @@ export function computePollMetrics(data: RoundData, nickname: string): PollMetri
     has_passfail: b.has_passfail,
   }));
 
+  const zero: WinBreakdown = { mandate: 0, gold: 0, sniper: 0, passfail: 0 };
+  const bd = (r?: { mandate: number; gold: number; sniper: number; passfail: number }): WinBreakdown =>
+    r ? { mandate: r.mandate, gold: r.gold, sniper: r.sniper, passfail: r.passfail } : zero;
+
   const base = settle(pollParties, bids, cfg);
   const potTotal = base.pots.basicTotal + base.pots.sniperPot + base.pots.passfailPot;
-  const pollTotal = base.results.find((r) => String(r.id) === nickname)?.total ?? 0;
+  const myRes = base.results.find((r) => String(r.id) === nickname);
+  const pollTotal = myRes?.total ?? 0;
+  const pollBreakdown = bd(myRes);
 
   const perfectSeats = Object.fromEntries(pollParties.map((p) => [p.id, p.actual_seats]));
   const perfectPf = Object.fromEntries(
@@ -283,20 +306,39 @@ export function computePollMetrics(data: RoundData, nickname: string): PollMetri
   const perfectBids = bids.map((b) =>
     b.id === nickname ? { ...b, seats: perfectSeats, passfail: perfectPf, has_sniper: true, has_passfail: true } : b,
   );
-  const perfectTotal =
-    settle(pollParties, perfectBids, cfg).results.find((r) => String(r.id) === nickname)?.total ?? 0;
+  const perfectRes = settle(pollParties, perfectBids, cfg).results.find((r) => String(r.id) === nickname);
+  const perfectTotal = perfectRes?.total ?? 0;
+  const perfectBreakdown = bd(perfectRes);
 
-  const avg: Record<string, number> = {};
-  for (const p of parties) avg[p.id] = pool.reduce((a, b) => a + (b.seats[p.id] ?? 0), 0) / (pool.length || 1);
-  let sim: { p: string; d: number } | null = null;
-  let dif: { p: string; d: number } | null = null;
+  // Similar / different party vs the whole pool
+  const compareFor = (p: Party): PartyCompare => {
+    const mine = me.seats[p.id] ?? 0;
+    const avg = pool.reduce((a, b) => a + (b.seats[p.id] ?? 0), 0) / (pool.length || 1);
+    const same = pool.filter((b) => (b.seats[p.id] ?? 0) === mine).length;
+    return { party: p.nickname, mine, avg, samePct: Math.round((same / (pool.length || 1)) * 100), count: pool.length };
+  };
+  let sim: { p: Party; d: number } | null = null;
+  let dif: { p: Party; d: number } | null = null;
   for (const p of parties) {
-    const d = Math.abs((me.seats[p.id] ?? 0) - avg[p.id]);
-    if (sim === null || d < sim.d) sim = { p: p.nickname, d };
-    if (dif === null || d > dif.d) dif = { p: p.nickname, d };
+    const avg = pool.reduce((a, b) => a + (b.seats[p.id] ?? 0), 0) / (pool.length || 1);
+    const d = Math.abs((me.seats[p.id] ?? 0) - avg);
+    if (sim === null || d < sim.d) sim = { p, d };
+    if (dif === null || d > dif.d) dif = { p, d };
   }
+  const similar = sim ? compareFor(sim.p) : null;
+  const different = dif ? compareFor(dif.p) : null;
 
-  return { potTotal, pollTotal, perfectTotal, mostSimilar: sim?.p ?? null, mostDifferent: dif?.p ?? null };
+  return {
+    potTotal,
+    pollTotal,
+    perfectTotal,
+    pollBreakdown,
+    perfectBreakdown,
+    similar,
+    different,
+    mostSimilar: similar?.party ?? null,
+    mostDifferent: different?.party ?? null,
+  };
 }
 
 /** Current pot sizes from paid bids (shown live, before results). */

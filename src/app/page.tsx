@@ -9,8 +9,8 @@ import {
   getMyBid,
   computePollMetrics,
 } from "@/lib/data";
-import { ilsShort } from "@/lib/format";
 import { PotsBar } from "@/components/PotsBar";
+import { ProjectionStats } from "@/components/ProjectionStats";
 import { StatusBanner } from "@/components/StatusBanner";
 import { Dashboard, type DashRow, type DashParty } from "@/components/Dashboard";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -166,13 +166,10 @@ export default async function HomePage() {
           {myMetrics && (
             <div className="card p-5">
               <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
-              <p className="mb-3 text-xs text-slate-400">לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי.</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <HomeStat label="זכייה אם התוצאות כמו הסקרים" value={ilsShort(myMetrics.pollTotal)} accent />
-                <HomeStat label="זכייה אם היית מנחש בול" value={ilsShort(myMetrics.perfectTotal)} accent />
-                <HomeStat label="הכי דומה לכולם" value={myMetrics.mostSimilar ?? "—"} />
-                <HomeStat label="הכי שונה מכולם" value={myMetrics.mostDifferent ?? "—"} />
-              </div>
+              <p className="mb-3 text-xs text-slate-400">
+                לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי. לחצו על כרטיס לפירוט.
+              </p>
+              <ProjectionStats metrics={myMetrics} />
             </div>
           )}
         </div>
@@ -197,17 +194,6 @@ export default async function HomePage() {
         <Link href="/privacy" className="text-xs text-slate-400 hover:text-brand-600 hover:underline">
           מדיניות פרטיות
         </Link>
-      </div>
-    </div>
-  );
-}
-
-function HomeStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className={`rounded-xl px-3 py-2 ${accent ? "bg-brand-50" : "bg-slate-50"}`}>
-      <div className="text-[11px] leading-tight text-slate-500">{label}</div>
-      <div className={`mt-0.5 truncate text-sm font-extrabold ${accent ? "text-brand-700" : "text-slate-700"}`}>
-        {value}
       </div>
     </div>
   );
