@@ -7,7 +7,9 @@ import {
   hasResults,
   settleRoundData,
   getMyBid,
+  computePollMetrics,
 } from "@/lib/data";
+import { ilsShort } from "@/lib/format";
 import { PotsBar } from "@/components/PotsBar";
 import { StatusBanner } from "@/components/StatusBanner";
 import { Dashboard, type DashRow, type DashParty } from "@/components/Dashboard";
@@ -49,6 +51,9 @@ export default async function HomePage() {
   const myBid = profile ? await getMyBid(round.id, profile.id) : null;
   const progressStep: 1 | 2 | 3 | null =
     profile && !settled ? (!myBid ? 1 : !myBid.paid ? 2 : 3) : null;
+
+  // The logged-in player's own poll projection (shown under the board).
+  const myMetrics = myBid ? computePollMetrics(data, myBid.nickname) : null;
 
   const dashParties: DashParty[] = data.parties.map((p) => ({
     id: p.id,
@@ -148,20 +153,35 @@ export default async function HomePage() {
             יתרה שלא חולקה: {settlement.remainder.toFixed(2)} ₪ — מועברת לפי שיקול דעת המארגנים (תקנון 1.7).
           </p>
         )}
+
+        {/* Pots overview + the logged-in player's own projection — right under the board */}
+        <div className="mt-3 space-y-3">
+          <PotsBar
+            participants={pots.participants}
+            mandatePot={pots.mandatePot}
+            goldPot={pots.goldPot}
+            sniperPot={pots.sniperPot}
+            passfailPot={pots.passfailPot}
+          />
+          {myMetrics && (
+            <div className="card p-5">
+              <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
+              <p className="mb-3 text-xs text-slate-400">לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי.</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <HomeStat label="זכייה אם התוצאות כמו הסקרים" value={ilsShort(myMetrics.pollTotal)} accent />
+                <HomeStat label="זכייה אם היית מנחש בול" value={ilsShort(myMetrics.perfectTotal)} accent />
+                <HomeStat label="הכי דומה לכולם" value={myMetrics.mostSimilar ?? "—"} />
+                <HomeStat label="הכי שונה מכולם" value={myMetrics.mostDifferent ?? "—"} />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 3) Everything else — process, how it works, pot highlights */}
+      {/* Everything else — process, how it works */}
       {progressStep !== null && <ProgressSteps step={progressStep} />}
 
       <HowItWorks />
-
-      <PotsBar
-        participants={pots.participants}
-        mandatePot={pots.mandatePot}
-        goldPot={pots.goldPot}
-        sniperPot={pots.sniperPot}
-        passfailPot={pots.passfailPot}
-      />
 
       {/* Invite friends */}
       <div className="card flex flex-wrap items-center justify-between gap-3 bg-gradient-to-l from-brand-50 to-transparent p-5">
@@ -177,6 +197,17 @@ export default async function HomePage() {
         <Link href="/privacy" className="text-xs text-slate-400 hover:text-brand-600 hover:underline">
           מדיניות פרטיות
         </Link>
+      </div>
+    </div>
+  );
+}
+
+function HomeStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-xl px-3 py-2 ${accent ? "bg-brand-50" : "bg-slate-50"}`}>
+      <div className="text-[11px] leading-tight text-slate-500">{label}</div>
+      <div className={`mt-0.5 truncate text-sm font-extrabold ${accent ? "text-brand-700" : "text-slate-700"}`}>
+        {value}
       </div>
     </div>
   );
