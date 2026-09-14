@@ -231,6 +231,74 @@ export function settleRoundData(data: RoundData, opts?: { onlyPaid?: boolean }):
   return settle(data.parties.map(toCalcParty), bids.map(toCalcBid), roundToConfig(data.round));
 }
 
+export interface PollMetrics {
+  potTotal: number;
+  pollTotal: number; // winnings if results = poll averages (with current bid)
+  perfectTotal: number; // winnings if this bid nailed the poll averages exactly
+  mostSimilar: string | null;
+  mostDifferent: string | null;
+}
+
+/**
+ * "What-if" projection for one bettor, assuming the election lands on the
+ * current news-poll averages. Pool = paid bids plus this bettor (so they always
+ * see their own projection). Returns null if the bettor isn't found or no polls.
+ */
+export function computePollMetrics(data: RoundData, nickname: string): PollMetrics | null {
+  const { parties, round } = data;
+  if (parties.length === 0) return null;
+  const threshold = round.threshold_pct;
+  const cfg = roundToConfig(round);
+
+  const pollParties: CalcParty[] = parties.map((p) => ({
+    id: p.id,
+    nickname: p.nickname,
+    is_swing: p.is_swing,
+    actual_seats: p.poll_seats ?? 0,
+    actual_passed: p.is_swing ? (p.poll_seats ?? 0) >= threshold : null,
+  }));
+
+  const pool = data.bids.filter((b) => b.paid || b.nickname === nickname);
+  const me = pool.find((b) => b.nickname === nickname);
+  if (!me) return null;
+
+  const bids: CalcBid[] = pool.map((b) => ({
+    id: b.nickname,
+    nickname: b.nickname,
+    seats: b.seats,
+    passfail: b.passfail,
+    is_double: b.is_double,
+    has_sniper: b.has_sniper,
+    has_passfail: b.has_passfail,
+  }));
+
+  const base = settle(pollParties, bids, cfg);
+  const potTotal = base.pots.basicTotal + base.pots.sniperPot + base.pots.passfailPot;
+  const pollTotal = base.results.find((r) => String(r.id) === nickname)?.total ?? 0;
+
+  const perfectSeats = Object.fromEntries(pollParties.map((p) => [p.id, p.actual_seats]));
+  const perfectPf = Object.fromEntries(
+    pollParties.filter((p) => p.is_swing).map((p) => [p.id, p.actual_passed]),
+  );
+  const perfectBids = bids.map((b) =>
+    b.id === nickname ? { ...b, seats: perfectSeats, passfail: perfectPf, has_sniper: true, has_passfail: true } : b,
+  );
+  const perfectTotal =
+    settle(pollParties, perfectBids, cfg).results.find((r) => String(r.id) === nickname)?.total ?? 0;
+
+  const avg: Record<string, number> = {};
+  for (const p of parties) avg[p.id] = pool.reduce((a, b) => a + (b.seats[p.id] ?? 0), 0) / (pool.length || 1);
+  let sim: { p: string; d: number } | null = null;
+  let dif: { p: string; d: number } | null = null;
+  for (const p of parties) {
+    const d = Math.abs((me.seats[p.id] ?? 0) - avg[p.id]);
+    if (sim === null || d < sim.d) sim = { p: p.nickname, d };
+    if (dif === null || d > dif.d) dif = { p: p.nickname, d };
+  }
+
+  return { potTotal, pollTotal, perfectTotal, mostSimilar: sim?.p ?? null, mostDifferent: dif?.p ?? null };
+}
+
 /** Current pot sizes from paid bids (shown live, before results). */
 export function currentPots(data: RoundData) {
   const paid = data.bids.filter((b) => b.paid);

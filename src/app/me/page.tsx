@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getActiveRound, getParties, getMyBid, getRoundData, settleRoundData } from "@/lib/data";
+import {
+  getActiveRound,
+  getParties,
+  getMyBid,
+  getRoundData,
+  settleRoundData,
+  computePollMetrics,
+} from "@/lib/data";
 import { ilsShort } from "@/lib/format";
 import { ClaimPaidButton } from "@/components/ClaimPaidButton";
 import { NicknameCard } from "@/components/NicknameCard";
@@ -37,6 +44,17 @@ export default async function MePage({
       )}
 
       <AccountCard />
+    </div>
+  );
+}
+
+function MeStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-xl px-3 py-2 ${accent ? "bg-brand-50" : "bg-slate-50"}`}>
+      <div className="text-[11px] leading-tight text-slate-500">{label}</div>
+      <div className={`mt-0.5 truncate text-sm font-extrabold ${accent ? "text-brand-700" : "text-slate-700"}`}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -94,14 +112,15 @@ async function BetSection({ roundId, userId }: { roundId: string; userId: string
     );
   }
 
-  // My winnings, if settled
+  // Load round data once — used for the settled winnings and the poll projection.
+  const data = await getRoundData(round.id);
   let myWin: number | null = null;
   if (round.status === "settled") {
-    const data = await getRoundData(round.id);
     const settlement = data && settleRoundData(data, { onlyPaid: true });
     const mine = settlement?.results.find((r) => r.id === myBid.id);
     myWin = mine?.total ?? 0;
   }
+  const metrics = data ? computePollMetrics(data, myBid.nickname) : null;
 
   const seatParties = parties.filter((p) => myBid.seats[p.id] != null);
 
@@ -133,6 +152,21 @@ async function BetSection({ roundId, userId }: { roundId: string; userId: string
         claimed={myBid.payment_claimed}
         payboxUrl={round.paybox_url}
       />
+
+      {/* Personal poll projection */}
+      {metrics && (
+        <div className="card p-5">
+          <h2 className="mb-1 font-bold">🔮 התחזית שלך</h2>
+          <p className="mb-3 text-xs text-slate-400">לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי.</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <MeStat label="בקופה כרגע" value={ilsShort(metrics.potTotal)} />
+            <MeStat label="זכייה אם התוצאות כמו הסקרים" value={ilsShort(metrics.pollTotal)} accent />
+            <MeStat label="זכייה אם היית מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
+            <MeStat label="הכי דומה לכולם" value={metrics.mostSimilar ?? "—"} />
+            <MeStat label="הכי שונה מכולם" value={metrics.mostDifferent ?? "—"} />
+          </div>
+        </div>
+      )}
 
       {/* Winnings */}
       {round.status === "settled" && (
