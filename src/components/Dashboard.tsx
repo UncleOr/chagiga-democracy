@@ -285,10 +285,9 @@ function PredictionDetail({
   return (
     <div className="space-y-3">
       {metrics && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Stat label="בקופה כרגע" value={ilsShort(metrics.potTotal)} />
-          <Stat label="זכייה אם התוצאות כמו הסקרים" value={ilsShort(metrics.pollTotal)} accent />
-          <Stat label="זכייה אם היית מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat label="זכיית משתמש אם התוצאות כמו בסקרים" value={ilsShort(metrics.pollTotal)} accent />
+          <Stat label="זכיית משתמש אם היה מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
           <Stat label="הכי דומה לכולם" value={metrics.mostSimilar ?? "—"} />
           <Stat label="הכי שונה מכולם" value={metrics.mostDifferent ?? "—"} />
         </div>
