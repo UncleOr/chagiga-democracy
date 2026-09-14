@@ -147,32 +147,32 @@ export default async function HomePage() {
               sniper_second: round.sniper_second_pct,
             },
           }}
+          belowPoll={
+            <div className="space-y-3">
+              <PotsBar
+                participants={pots.participants}
+                mandatePot={pots.mandatePot}
+                goldPot={pots.goldPot}
+                sniperPot={pots.sniperPot}
+                passfailPot={pots.passfailPot}
+              />
+              {myMetrics && (
+                <div className="card p-5">
+                  <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
+                  <p className="mb-3 text-xs text-slate-400">
+                    לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי. לחצו על כרטיס לפירוט.
+                  </p>
+                  <ProjectionStats metrics={myMetrics} />
+                </div>
+              )}
+            </div>
+          }
         />
         {settled && settlement && settlement.remainder > 0.01 && (
           <p className="mt-3 rounded-xl bg-slate-50 px-4 py-2 text-xs text-slate-400">
             יתרה שלא חולקה: {settlement.remainder.toFixed(2)} ₪ — מועברת לפי שיקול דעת המארגנים (תקנון 1.7).
           </p>
         )}
-
-        {/* Pots overview + the logged-in player's own projection — right under the board */}
-        <div className="mt-3 space-y-3">
-          <PotsBar
-            participants={pots.participants}
-            mandatePot={pots.mandatePot}
-            goldPot={pots.goldPot}
-            sniperPot={pots.sniperPot}
-            passfailPot={pots.passfailPot}
-          />
-          {myMetrics && (
-            <div className="card p-5">
-              <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
-              <p className="mb-3 text-xs text-slate-400">
-                לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי. לחצו על כרטיס לפירוט.
-              </p>
-              <ProjectionStats metrics={myMetrics} />
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Everything else — process, how it works */}

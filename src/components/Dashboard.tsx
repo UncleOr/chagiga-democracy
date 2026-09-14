@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { ilsShort } from "@/lib/format";
 import { BLOCS, type BlocKey } from "@/lib/types";
 import { settle, type CalcBid, type CalcConfig, type CalcParty } from "@/lib/calc";
@@ -54,12 +54,14 @@ export function Dashboard({
   showResults,
   showWinnings,
   scenario,
+  belowPoll,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
   showWinnings: boolean;
   scenario: DashScenario;
+  belowPoll?: ReactNode;
 }) {
   // Default to the overview ("מה המצב בינתיים"); switch to results/participants on demand.
   const [tab, setTab] = useState<"table" | "poll">("poll");
@@ -94,7 +96,10 @@ export function Dashboard({
           scenario={scenario}
         />
       ) : (
-        <AveragePoll parties={parties} rows={rows} />
+        <>
+          <AveragePoll parties={parties} rows={rows} />
+          {belowPoll}
+        </>
       )}
     </div>
   );
