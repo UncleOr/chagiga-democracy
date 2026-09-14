@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 const KEY = "chagiga_onboarded_v1";
@@ -55,12 +56,12 @@ export function OnboardingModal() {
     router.push("/login?next=/bet");
   }
 
-  if (!show) return null;
+  if (!show || typeof document === "undefined") return null;
   const last = i === SLIDES.length - 1;
   const s = SLIDES[i];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm">
       <div className="animate-[fadeIn_.3s_ease] max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5">
@@ -101,6 +102,7 @@ export function OnboardingModal() {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
