@@ -84,18 +84,40 @@ export function BetForm({
     router.refresh();
   }
 
+  const hasPolls = parties.some((p) => p.poll_seats != null);
+  function resetToPolls() {
+    const s: Record<string, string> = {};
+    for (const p of parties) s[p.id] = String(p.poll_seats ?? 0);
+    setSeats(s);
+    const pfNew: Record<string, "pass" | "fail" | ""> = {};
+    for (const p of swing) pfNew[p.id] = (p.poll_seats ?? 0) >= round.threshold_pct ? "pass" : "fail";
+    setPf(pfNew);
+  }
+
   return (
     <form action={action} className="space-y-5">
       {/* Seats */}
       <div className="card p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold">ניחוש מנדטים</h2>
-          <div
-            className={`badge ${
-              sum === TOTAL_SEATS ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            סה"כ {sum} / {TOTAL_SEATS}
+          <div className="flex items-center gap-2">
+            {hasPolls && (
+              <button
+                type="button"
+                onClick={resetToPolls}
+                className="btn-ghost !px-3 !py-1.5 text-xs"
+                title="ממלא את כל הניחושים לפי ממוצע הסקרים העדכני"
+              >
+                📊 אפס לממוצע הסקרים
+              </button>
+            )}
+            <div
+              className={`badge ${
+                sum === TOTAL_SEATS ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              סה"כ {sum} / {TOTAL_SEATS}
+            </div>
           </div>
         </div>
 
@@ -135,6 +157,9 @@ export function BetForm({
                       </span>
                     )}
                   </span>
+                  {p.poll_seats != null && (
+                    <span className="text-[11px] text-slate-400">ממוצע הסקרים: {p.poll_seats}</span>
+                  )}
                 </span>
                 <input
                   type="number"
