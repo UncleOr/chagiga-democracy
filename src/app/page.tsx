@@ -147,7 +147,7 @@ export default async function HomePage() {
               sniper_second: round.sniper_second_pct,
             },
           }}
-          belowPoll={
+          abovePoll={
             <div className="space-y-3">
               <PotsBar
                 participants={pots.participants}

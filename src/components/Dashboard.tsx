@@ -54,14 +54,14 @@ export function Dashboard({
   showResults,
   showWinnings,
   scenario,
-  belowPoll,
+  abovePoll,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
   showWinnings: boolean;
   scenario: DashScenario;
-  belowPoll?: ReactNode;
+  abovePoll?: ReactNode;
 }) {
   // Default to the overview ("מה המצב בינתיים"); switch to results/participants on demand.
   const [tab, setTab] = useState<"table" | "poll">("poll");
@@ -97,8 +97,8 @@ export function Dashboard({
         />
       ) : (
         <>
+          {abovePoll}
           <AveragePoll parties={parties} rows={rows} />
-          {belowPoll}
         </>
       )}
     </div>
