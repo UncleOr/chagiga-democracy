@@ -83,6 +83,32 @@ export async function upsertParty(formData: FormData) {
   revalidatePath("/");
 }
 
+/** Bulk-save every party's fields in one submit. */
+export async function saveAllParties(formData: FormData) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const ids = String(formData.get("ids") ?? "")
+    .split(",")
+    .filter(Boolean);
+  for (const id of ids) {
+    const name = String(formData.get(`name_${id}`) ?? "").trim();
+    if (!name) continue;
+    const nickname = String(formData.get(`nickname_${id}`) ?? "").trim() || name;
+    const display_order = Number(formData.get(`display_order_${id}`) ?? 0) || 0;
+    const is_swing = formData.get(`is_swing_${id}`) === "on";
+    const blocRaw = String(formData.get(`bloc_${id}`) ?? "").trim();
+    const bloc = ["coalition", "change", "arab"].includes(blocRaw) ? blocRaw : null;
+    const pollRaw = formData.get(`poll_seats_${id}`);
+    const poll_seats = pollRaw === null || String(pollRaw).trim() === "" ? null : Number(pollRaw);
+    await admin
+      .from("parties")
+      .update({ name, nickname, display_order, is_swing, bloc, poll_seats })
+      .eq("id", id);
+  }
+  revalidatePath("/admin/parties");
+  revalidatePath("/");
+}
+
 export async function deleteParty(id: string) {
   await requireAdmin();
   const admin = createAdminClient();

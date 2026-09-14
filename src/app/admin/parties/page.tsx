@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { getAllRounds, getParties } from "@/lib/data";
-import { upsertParty, deleteParty } from "@/lib/actions/admin";
+import { upsertParty, deleteParty, saveAllParties } from "@/lib/actions/admin";
+import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { BLOCS, type BlocKey } from "@/lib/types";
 
-function BlocSelect({ value }: { value: BlocKey | null }) {
+function BlocSelect({ name, value }: { name: string; value: BlocKey | null }) {
   return (
     <div className="min-w-[8rem]">
       <label className="label text-xs">גוש</label>
-      <select name="bloc" defaultValue={value ?? ""} className="input">
+      <select name={name} defaultValue={value ?? ""} className="input">
         <option value="">— ללא —</option>
         {BLOCS.map((b) => (
           <option key={b.key} value={b.key}>
@@ -33,47 +34,60 @@ export default async function AdminParties({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-bold">מפלגות · {round.name}</h2>
         <span className="text-sm text-slate-400">{parties.length} מפלגות</span>
       </div>
 
-      <div className="card divide-y divide-slate-100">
-        {parties.map((p) => (
-          <div key={p.id} className="flex flex-wrap items-end gap-2 p-3">
-            <form action={upsertParty} className="flex flex-1 flex-wrap items-end gap-2">
-              <input type="hidden" name="id" value={p.id} />
-              <input type="hidden" name="round_id" value={round.id} />
+      {/* One form for all parties — edit freely, save once. */}
+      <form action={saveAllParties}>
+        <input type="hidden" name="ids" value={parties.map((p) => p.id).join(",")} />
+
+        <div className="card divide-y divide-slate-100">
+          {parties.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-end gap-2 p-3">
               <div className="w-14">
                 <label className="label text-xs">סדר</label>
-                <input name="display_order" type="number" defaultValue={p.display_order} className="input text-center" />
+                <input name={`display_order_${p.id}`} type="number" defaultValue={p.display_order} className="input text-center" />
               </div>
               <div className="min-w-[10rem] flex-1">
                 <label className="label text-xs">שם מלא</label>
-                <input name="name" defaultValue={p.name} className="input" />
+                <input name={`name_${p.id}`} defaultValue={p.name} className="input" />
               </div>
               <div className="min-w-[8rem] flex-1">
                 <label className="label text-xs">כינוי בטבלה</label>
-                <input name="nickname" defaultValue={p.nickname} className="input" />
+                <input name={`nickname_${p.id}`} defaultValue={p.nickname} className="input" />
               </div>
-              <BlocSelect value={p.bloc} />
+              <BlocSelect name={`bloc_${p.id}`} value={p.bloc} />
               <div className="w-20">
                 <label className="label text-xs">סקר</label>
-                <input name="poll_seats" type="number" defaultValue={p.poll_seats ?? ""} placeholder="—" className="input text-center" />
+                <input name={`poll_seats_${p.id}`} type="number" defaultValue={p.poll_seats ?? ""} placeholder="—" className="input text-center" />
               </div>
               <label className="chip mb-1 cursor-pointer border-slate-200">
-                <input type="checkbox" name="is_swing" defaultChecked={p.is_swing} className="accent-brand-600" />
+                <input type="checkbox" name={`is_swing_${p.id}`} defaultChecked={p.is_swing} className="accent-brand-600" />
                 מתנדנדת
               </label>
-              <button className="btn-ghost mb-0.5">שמירה</button>
-            </form>
-            <DeleteButton id={p.id} />
-          </div>
-        ))}
-        {parties.length === 0 && <p className="p-4 text-sm text-slate-400">אין מפלגות. הוסיפו למטה.</p>}
-      </div>
+              <ConfirmSubmit
+                confirmText={`למחוק את ${p.nickname}?`}
+                formAction={deleteParty.bind(null, p.id)}
+                className="btn-ghost mb-0.5 border-red-200 text-red-500 hover:bg-red-50"
+              >
+                מחיקה
+              </ConfirmSubmit>
+            </div>
+          ))}
+          {parties.length === 0 && <p className="p-4 text-sm text-slate-400">אין מפלגות. הוסיפו למטה.</p>}
+        </div>
 
-      {/* Add new */}
+        {/* Sticky bulk-save bar */}
+        {parties.length > 0 && (
+          <div className="sticky bottom-3 z-10 mt-3">
+            <button className="btn-primary w-full py-3 text-base shadow-soft">💾 שמירת כל המפלגות</button>
+          </div>
+        )}
+      </form>
+
+      {/* Add new (separate) */}
       <form action={upsertParty} className="card flex flex-wrap items-end gap-2 p-3">
         <input type="hidden" name="round_id" value={round.id} />
         <div className="w-14">
@@ -88,7 +102,7 @@ export default async function AdminParties({
           <label className="label text-xs">כינוי בטבלה</label>
           <input name="nickname" placeholder="כינוי קצר" className="input" />
         </div>
-        <BlocSelect value={null} />
+        <BlocSelect name="bloc" value={null} />
         <div className="w-20">
           <label className="label text-xs">סקר</label>
           <input name="poll_seats" type="number" placeholder="—" className="input text-center" />
@@ -107,13 +121,5 @@ export default async function AdminParties({
         להזנת תוצאות ←
       </Link>
     </div>
-  );
-}
-
-function DeleteButton({ id }: { id: string }) {
-  return (
-    <form action={deleteParty.bind(null, id)} className="mb-0.5">
-      <button className="btn-ghost border-red-200 text-red-500 hover:bg-red-50">מחיקה</button>
-    </form>
   );
 }
