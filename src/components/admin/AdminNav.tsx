@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin/parties", label: "מפלגות" },
   { href: "/admin/results", label: "תוצאות" },
   { href: "/admin/users", label: "משתמשים ותשלומים" },
+  { href: "/admin/reminders", label: "דיוור" },
 ];
 
 export function AdminNav() {

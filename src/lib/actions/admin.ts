@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getActiveRound, getAllProfiles, getAdminBids } from "@/lib/data";
+import { sendEmail } from "@/lib/email";
+import { reminderEmailHtml, type Audience } from "@/lib/emailTemplates";
 import type { RoundStatus } from "@/lib/types";
 
 function refreshAll() {
@@ -183,6 +186,75 @@ export async function deleteUser(userId: string) {
   await admin.auth.admin.deleteUser(userId);
   await admin.from("profiles").delete().eq("id", userId); // in case no auth row
   refreshAll();
+}
+
+// ── Reminders (bulk email) ────────────────────────────────────────────────
+export type ReminderResult = {
+  ok: boolean;
+  sent: number;
+  failed: number;
+  total: number;
+  error?: string;
+};
+
+/** Resolve the recipient list for an audience: [{ email, name }]. */
+async function recipientsFor(audience: Audience): Promise<{ email: string; name: string }[]> {
+  const [profiles, round] = await Promise.all([getAllProfiles(), getActiveRound()]);
+  const bids = round ? await getAdminBids(round.id) : [];
+  const bidByEmail = new Map(bids.map((b) => [b.email, b]));
+
+  const active = profiles.filter((p) => !p.banned && !!p.email);
+  const list = active.filter((p) => {
+    const b = bidByEmail.get(p.email);
+    switch (audience) {
+      case "bet":
+        return !!b;
+      case "unpaid":
+        return !!b && !b.paid;
+      case "nobet":
+        return !b;
+      case "all":
+      default:
+        return true;
+    }
+  });
+  return list.map((p) => ({
+    email: p.email,
+    name: p.display_name || bidByEmail.get(p.email)?.nickname || "משתתף/ת",
+  }));
+}
+
+/** Send a bulk reminder email to a chosen audience. Called from the admin composer. */
+export async function sendReminders(formData: FormData): Promise<ReminderResult> {
+  await requireAdmin();
+  const audience = String(formData.get("audience") ?? "all") as Audience;
+  const subject = String(formData.get("subject") ?? "").trim();
+  const body = String(formData.get("body") ?? "");
+  const ctaLabel = String(formData.get("ctaLabel") ?? "").trim();
+  const ctaPath = String(formData.get("ctaPath") ?? "/").trim() || "/";
+
+  if (!subject) return { ok: false, sent: 0, failed: 0, total: 0, error: "חסר נושא למייל." };
+  if (!body.trim()) return { ok: false, sent: 0, failed: 0, total: 0, error: "גוף ההודעה ריק." };
+  if (!process.env.RESEND_API_KEY)
+    return { ok: false, sent: 0, failed: 0, total: 0, error: "שליחת מיילים לא מוגדרת (חסר RESEND_API_KEY)." };
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://chagiga-democracy-swart.vercel.app";
+  const ctaUrl = ctaPath.startsWith("http") ? ctaPath : `${site}${ctaPath.startsWith("/") ? "" : "/"}${ctaPath}`;
+
+  const recipients = await recipientsFor(audience);
+  if (recipients.length === 0) return { ok: true, sent: 0, failed: 0, total: 0 };
+
+  let sent = 0;
+  let failed = 0;
+  for (const r of recipients) {
+    const html = reminderEmailHtml({ body, ctaLabel, ctaUrl, name: r.name });
+    const ok = await sendEmail({ to: r.email, subject, html });
+    if (ok) sent++;
+    else failed++;
+    // Stay under Resend's rate limit (~2/s on the free tier).
+    await new Promise((res) => setTimeout(res, 120));
+  }
+  return { ok: failed === 0, sent, failed, total: recipients.length };
 }
 
 /** Send a password-reset email to the user. */
