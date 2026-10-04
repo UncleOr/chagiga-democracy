@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { dateHe, statusLabel } from "@/lib/format";
+import { Countdown } from "@/components/Countdown";
 import type { Round } from "@/lib/types";
 
 export function StatusBanner({ round, isLoggedIn }: { round: Round; isLoggedIn?: boolean }) {
@@ -33,6 +34,11 @@ export function StatusBanner({ round, isLoggedIn }: { round: Round; isLoggedIn?:
             <span className="mt-0.5 block text-sm opacity-80">התוצאות הסופיות פורסמו 🎉</span>
           )}
         </div>
+        {round.status === "open" && round.closes_at && (
+          <div className="order-first sm:order-none">
+            <Countdown target={round.closes_at} />
+          </div>
+        )}
         {round.status === "open" && (
           <Link
             href={isLoggedIn ? "/bet" : "/login?next=/bet"}
