@@ -24,7 +24,7 @@ export function telegramEmailHtml(): string {
 
 export const AUDIENCES: { key: Audience; label: string; hint: string }[] = [
   { key: "all", label: "כל הרשומים", hint: "כל מי שנרשם לאתר" },
-  { key: "bet", label: "מי שהימר", hint: "כל מי ששלח הימור" },
+  { key: "bet", label: "הימרו ושילמו", hint: "שלחו הימור והתשלום אושר" },
   { key: "unpaid", label: "הימרו ולא שילמו", hint: "שלחו הימור אך התשלום טרם אושר" },
   { key: "nobet", label: "נרשמו ולא הימרו", hint: "נרשמו אך עוד לא שלחו הימור" },
 ];

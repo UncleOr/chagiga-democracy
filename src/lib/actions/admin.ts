@@ -208,7 +208,7 @@ async function recipientsFor(audience: Audience): Promise<{ email: string; name:
     const b = bidByEmail.get(p.email);
     switch (audience) {
       case "bet":
-        return !!b;
+        return !!b && b.paid;
       case "unpaid":
         return !!b && !b.paid;
       case "nobet":

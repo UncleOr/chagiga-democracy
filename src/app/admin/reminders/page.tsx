@@ -14,8 +14,8 @@ export default async function AdminReminders() {
     const b = bidByEmail.get(p.email);
     counts.all++;
     if (b) {
-      counts.bet++;
-      if (!b.paid) counts.unpaid++;
+      if (b.paid) counts.bet++;
+      else counts.unpaid++;
     } else {
       counts.nobet++;
     }
