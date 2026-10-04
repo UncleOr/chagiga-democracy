@@ -217,9 +217,12 @@ export function ReminderComposer({
             <span className="text-slate-400"> נמענים</span>
             {result && (
               <span className={`ms-3 font-semibold ${result.ok ? "text-green-600" : "text-amber-600"}`}>
-                {result.error
+                {result.total === 0 && result.error
                   ? `⚠️ ${result.error}`
                   : `✓ נשלחו ${result.sent}${result.failed ? ` · נכשלו ${result.failed}` : ""}`}
+                {result.failed > 0 && result.error && (
+                  <span className="block text-xs font-normal text-amber-600/90">סיבה: {result.error}</span>
+                )}
               </span>
             )}
           </div>

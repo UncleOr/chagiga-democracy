@@ -246,15 +246,25 @@ export async function sendReminders(formData: FormData): Promise<ReminderResult>
 
   let sent = 0;
   let failed = 0;
+  let firstError: string | undefined;
   for (const r of recipients) {
     const html = reminderEmailHtml({ body, ctaLabel, ctaUrl, name: r.name });
-    const ok = await sendEmail({ to: r.email, subject, html });
-    if (ok) sent++;
-    else failed++;
+    const res = await sendEmail({ to: r.email, subject, html });
+    if (res.ok) sent++;
+    else {
+      failed++;
+      if (!firstError) firstError = res.error;
+    }
     // Stay under Resend's rate limit (~2/s on the free tier).
     await new Promise((res) => setTimeout(res, 120));
   }
-  return { ok: failed === 0, sent, failed, total: recipients.length };
+  return {
+    ok: failed === 0,
+    sent,
+    failed,
+    total: recipients.length,
+    error: failed ? firstError : undefined,
+  };
 }
 
 /** Send a password-reset email to the user. */

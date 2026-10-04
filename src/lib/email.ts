@@ -6,9 +6,13 @@ import { telegramEmailHtml } from "@/lib/emailTemplates";
  * No-ops silently if RESEND_API_KEY is not configured, so the app works
  * without email until a key is added (Vercel env → redeploy).
  */
-export async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<boolean> {
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ ok: boolean; error?: string }> {
   const key = process.env.RESEND_API_KEY;
-  if (!key) return false;
+  if (!key) return { ok: false, error: "RESEND_API_KEY לא מוגדר" };
   const from = process.env.EMAIL_FROM || "חגיגה של דמוקרטיה <onboarding@resend.dev>";
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -16,9 +20,20 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: [opts.to], subject: opts.subject, html: opts.html }),
     });
-    return res.ok;
-  } catch {
-    return false;
+    if (res.ok) return { ok: true };
+    // Surface Resend's own message so misconfig (unverified domain, test-mode
+    // recipient restriction, bad key) is diagnosable instead of a silent fail.
+    let msg = `Resend ${res.status}`;
+    try {
+      const j = (await res.json()) as { message?: string; name?: string };
+      if (j?.message) msg = j.message;
+      else if (j?.name) msg = j.name;
+    } catch {
+      /* ignore parse errors */
+    }
+    return { ok: false, error: msg };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "שגיאת רשת" };
   }
 }
 
