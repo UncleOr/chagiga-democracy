@@ -8,6 +8,7 @@ import { ShareButtons } from "@/components/ShareButtons";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { Confetti } from "@/components/Confetti";
 import { resetMyBid, deleteMyAccount } from "@/lib/actions/profile";
+import { TELEGRAM_CHANNEL, TELEGRAM_GROUP } from "@/lib/emailTemplates";
 
 export default async function MePage({
   searchParams,
@@ -28,6 +29,20 @@ export default async function MePage({
           <div className="mt-1 text-lg font-extrabold text-green-800">ההימור נקלט!</div>
           <div className="text-sm text-green-700/80">
             נותר רק לשלם כדי להיות משתתפים פעילים — הפרטים למטה.
+          </div>
+          <div className="mt-3 border-t border-green-200/70 pt-3 text-sm text-green-800">
+            <p>
+              רוצים להישאר מעודכנים?{" "}
+              <a href={TELEGRAM_CHANNEL} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+                הצטרפו לערוץ הטלגרם שלנו כאן
+              </a>
+            </p>
+            <p className="mt-1">
+              רוצים לדבר על ההימור שלכם בקבוצה החופרת?{" "}
+              <a href={TELEGRAM_GROUP} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+                בואו
+              </a>
+            </p>
           </div>
         </div>
       )}

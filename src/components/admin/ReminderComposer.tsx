@@ -163,7 +163,8 @@ export function ReminderComposer({
               className="input font-normal leading-relaxed"
             />
             <p className="mt-1 text-[11px] text-slate-400">
-              אפשר להשתמש ב־<code>{"{name}"}</code> והוא יוחלף בכינוי של כל נמען. ירידות שורה נשמרות.
+              <code>{"{name}"}</code> יוחלף בכינוי של כל נמען · קישור נכתב כך:{" "}
+              <code>{"[טקסט](https://...)"}</code> · ירידות שורה נשמרות.
             </p>
           </div>
 

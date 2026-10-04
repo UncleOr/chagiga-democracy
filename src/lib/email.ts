@@ -1,4 +1,5 @@
 import "server-only";
+import { telegramEmailHtml } from "@/lib/emailTemplates";
 
 /**
  * Sends a transactional email via Resend's HTTP API.
@@ -42,6 +43,7 @@ export function paymentEmailHtml(o: {
       <p style="margin:18px 0">${pay}</p>
       <p style="color:#64748b;font-size:13px">אחרי התשלום, סמנו “כבר שילמתי” באזור האישי כדי שנאשר אתכם.</p>
       <p style="margin-top:20px"><a href="${o.siteUrl}/me" style="color:#1e40f5">לאזור האישי שלי →</a></p>
+      ${telegramEmailHtml()}
     </div>
   </div>`;
 }
