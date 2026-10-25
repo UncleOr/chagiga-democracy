@@ -9,6 +9,7 @@ export interface Profile {
   is_admin: boolean;
   banned: boolean;
   created_at: string;
+  bet_open_until: string | null; // ISO — personal betting window granted by admin
 }
 
 export interface Round {

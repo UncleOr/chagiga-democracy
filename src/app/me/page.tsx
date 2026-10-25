@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getActiveRound, getParties, getMyBid, getRoundData, settleRoundData } from "@/lib/data";
-import { ilsShort } from "@/lib/format";
+import { ilsShort, dateHe } from "@/lib/format";
 import { ClaimPaidButton } from "@/components/ClaimPaidButton";
 import { NicknameCard } from "@/components/NicknameCard";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ConfirmSubmit } from "@/components/ConfirmSubmit";
 import { Confetti } from "@/components/Confetti";
 import { resetMyBid, deleteMyAccount } from "@/lib/actions/profile";
+import { canBet, overrideActive } from "@/lib/betWindow";
 import { TELEGRAM_CHANNEL, TELEGRAM_GROUP } from "@/lib/emailTemplates";
 
 export default async function MePage({
@@ -50,7 +51,12 @@ export default async function MePage({
       {!round ? (
         <div className="card p-8 text-center text-slate-500">אין סבב פעיל כרגע.</div>
       ) : (
-        <BetSection roundId={round.id} userId={profile.id} />
+        <BetSection
+          roundId={round.id}
+          userId={profile.id}
+          canEdit={canBet(round, profile.bet_open_until)}
+          personalUntil={overrideActive(round, profile.bet_open_until) ? profile.bet_open_until : null}
+        />
       )}
 
       <AccountCard />
@@ -90,7 +96,17 @@ function AccountCard() {
   );
 }
 
-async function BetSection({ roundId, userId }: { roundId: string; userId: string }) {
+async function BetSection({
+  roundId,
+  userId,
+  canEdit,
+  personalUntil,
+}: {
+  roundId: string;
+  userId: string;
+  canEdit: boolean;
+  personalUntil: string | null;
+}) {
   const round = (await getActiveRound())!;
   const [parties, myBid] = await Promise.all([getParties(roundId), getMyBid(roundId, userId)]);
 
@@ -100,7 +116,10 @@ async function BetSection({ roundId, userId }: { roundId: string; userId: string
         <div className="mb-2 text-4xl">🎲</div>
         <h2 className="text-xl font-bold">עוד לא הימרת</h2>
         <p className="mt-2 text-sm text-slate-500">{round.name}</p>
-        {round.status === "open" ? (
+        {personalUntil && (
+          <p className="mt-3 text-sm text-brand-700">⏳ נפתח עבורך חלון הימור אישי עד {dateHe(personalUntil)}</p>
+        )}
+        {canEdit ? (
           <Link href="/bet" className="btn-primary mt-5">
             להימור
           </Link>
@@ -129,12 +148,19 @@ async function BetSection({ roundId, userId }: { roundId: string; userId: string
           <h2 className="text-xl font-extrabold">ההימור שלי</h2>
           <p className="text-sm text-slate-500">{round.name}</p>
         </div>
-        {round.status === "open" && (
+        {canEdit && (
           <Link href="/bet" className="btn-ghost">
             עריכה
           </Link>
         )}
       </div>
+
+      {personalUntil && (
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
+          ⏳ נפתח עבורך חלון הימור אישי עד <strong>{dateHe(personalUntil)}</strong> — אפשר לעדכן את
+          ההימור עד אז.
+        </div>
+      )}
 
       {myBid.frozen && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">

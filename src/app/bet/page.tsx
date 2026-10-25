@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getActiveRound, getParties, getMyBid } from "@/lib/data";
+import { canBet, roundBetOpen, overrideActive } from "@/lib/betWindow";
+import { dateHe } from "@/lib/format";
 import { BetForm } from "@/components/BetForm";
 
 export default async function BetPage() {
@@ -11,7 +13,7 @@ export default async function BetPage() {
   if (!round) {
     return <EmptyState title="אין סבב פעיל" body="עדיין לא נפתח סבב הימורים. חזרו בקרוב!" />;
   }
-  if (round.status !== "open") {
+  if (!canBet(round, profile.bet_open_until)) {
     return (
       <EmptyState
         title="ההימורים סגורים"
@@ -19,6 +21,9 @@ export default async function BetPage() {
       />
     );
   }
+
+  // The user can bet only thanks to a personal extension (round not globally open).
+  const personalOnly = !roundBetOpen(round) && overrideActive(round, profile.bet_open_until);
 
   const [parties, existing] = await Promise.all([
     getParties(round.id),
@@ -31,6 +36,12 @@ export default async function BetPage() {
         <h1 className="text-2xl font-extrabold">{existing ? "עריכת ההימור" : "הימור חדש"}</h1>
         <p className="text-sm text-slate-500">{round.name}</p>
       </div>
+      {personalOnly && (
+        <div className="mb-4 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
+          ⏳ נפתח עבורך חלון הימור אישי עד <strong>{dateHe(profile.bet_open_until)}</strong>. אפשר
+          לשלוח או לעדכן את ההימור עד אז.
+        </div>
+      )}
       <BetForm round={round} parties={parties} existing={existing} />
     </div>
   );

@@ -170,6 +170,28 @@ export async function setUserBanned(userId: string, value: boolean) {
   revalidatePath("/admin/users");
 }
 
+/** Grant/update a personal betting window for a user (datetime-local string). */
+export async function setBetOverride(userId: string, formData: FormData) {
+  await requireAdmin();
+  const raw = String(formData.get("until") ?? "").trim();
+  const iso = raw ? new Date(raw).toISOString() : null;
+  const admin = createAdminClient();
+  await admin.from("profiles").update({ bet_open_until: iso }).eq("id", userId);
+  refreshAll();
+  revalidatePath("/admin/users");
+  revalidatePath("/bet");
+}
+
+/** Clear a user's personal betting window. */
+export async function clearBetOverride(userId: string) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  await admin.from("profiles").update({ bet_open_until: null }).eq("id", userId);
+  refreshAll();
+  revalidatePath("/admin/users");
+  revalidatePath("/bet");
+}
+
 /** Delete a user's bid(s) so they can start over (cascades predictions). */
 export async function resetUserBid(userId: string) {
   await requireAdmin();

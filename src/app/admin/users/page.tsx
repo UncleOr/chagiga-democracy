@@ -7,6 +7,8 @@ import {
   deleteUser,
   resetUserPassword,
   markPaid,
+  setBetOverride,
+  clearBetOverride,
 } from "@/lib/actions/admin";
 import { UsersList, type UserRow } from "@/components/admin/UsersList";
 
@@ -25,6 +27,7 @@ export default async function AdminUsers() {
       is_admin: p.is_admin,
       banned: p.banned,
       created_at: p.created_at,
+      bet_open_until: p.bet_open_until,
       isSelf: p.id === me?.id,
       bid: b
         ? { id: b.id, amount_due: b.amount_due, paid: b.paid, payment_claimed: b.payment_claimed }
@@ -43,7 +46,16 @@ export default async function AdminUsers() {
 
       <UsersList
         rows={rows}
-        actions={{ markPaid, setUserAdmin, setUserBanned, resetUserBid, deleteUser, resetUserPassword }}
+        actions={{
+          markPaid,
+          setUserAdmin,
+          setUserBanned,
+          resetUserBid,
+          deleteUser,
+          resetUserPassword,
+          setBetOverride,
+          clearBetOverride,
+        }}
       />
 
       <p className="text-xs text-slate-400">

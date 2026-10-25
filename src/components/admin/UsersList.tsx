@@ -11,8 +11,23 @@ export interface UserRow {
   is_admin: boolean;
   banned: boolean;
   created_at: string;
+  bet_open_until: string | null;
   isSelf: boolean;
   bid: { id: string; amount_due: number; paid: boolean; payment_claimed: boolean } | null;
+}
+
+/** ISO → "YYYY-MM-DDTHH:mm" in the admin's local tz, for datetime-local inputs. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
+    d.getMinutes(),
+  )}`;
+}
+
+function fmtHe(iso: string): string {
+  return new Date(iso).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
 }
 
 type Filter = "all" | "bet" | "unpaid" | "nobet";
@@ -36,6 +51,8 @@ export function UsersList({
     resetUserBid: (userId: string) => Promise<void>;
     deleteUser: (userId: string) => Promise<void>;
     resetUserPassword: (userId: string) => Promise<void>;
+    setBetOverride: (userId: string, formData: FormData) => Promise<void>;
+    clearBetOverride: (userId: string) => Promise<void>;
   };
 }) {
   const [query, setQuery] = useState("");
@@ -109,6 +126,11 @@ export function UsersList({
                   {r.is_admin && <span className="badge bg-brand-50 text-brand-700">מנהל</span>}
                   {r.banned && <span className="badge bg-red-100 text-red-600">מושעה</span>}
                   {r.isSelf && <span className="badge bg-slate-100 text-slate-400">אתה</span>}
+                  {r.bet_open_until && (
+                    <span className="badge bg-brand-50 text-brand-700" title="חלון הימור אישי">
+                      ⏳ הימור עד {fmtHe(r.bet_open_until)}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-0.5 truncate text-sm text-slate-500">{r.email}</div>
                 <div className="text-xs text-slate-400">נרשם {dateHe(r.created_at)}</div>
@@ -189,6 +211,37 @@ export function UsersList({
                   </form>
                 </>
               )}
+            </div>
+
+            {/* Personal betting window */}
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <label className="label text-xs">פתיחת הימור אישית — עד מתי</label>
+                  <form
+                    action={actions.setBetOverride.bind(null, r.id)}
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    <input
+                      type="datetime-local"
+                      name="until"
+                      defaultValue={toLocalInput(r.bet_open_until)}
+                      className="input !py-1.5 text-sm"
+                    />
+                    <button className="btn-ghost !px-3 !py-1.5 text-xs border-brand-300 !bg-brand-50 text-brand-700">
+                      {r.bet_open_until ? "עדכון חלון" : "פתיחת הימור"}
+                    </button>
+                  </form>
+                </div>
+                {r.bet_open_until && (
+                  <form action={actions.clearBetOverride.bind(null, r.id)}>
+                    <button className="btn-ghost !px-3 !py-1.5 text-xs text-slate-500">סגירת חלון</button>
+                  </form>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-400">
+                מאפשר למשתמש זה לשלוח/לערוך הימור עד המועד שנבחר, גם אם הסבב כבר נסגר.
+              </p>
             </div>
           </div>
         ))}

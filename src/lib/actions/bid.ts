@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveRound, getParties } from "@/lib/data";
+import { canBet } from "@/lib/betWindow";
 import { amountDue } from "@/lib/calc";
 import { sendEmail, paymentEmailHtml } from "@/lib/email";
 
@@ -18,9 +19,10 @@ export async function submitBid(_prev: unknown, formData: FormData): Promise<Sub
   const profile = await requireUser();
   const round = await getActiveRound();
   if (!round) return { ok: false, error: "אין סבב פעיל." };
-  if (round.status !== "open") return { ok: false, error: "ההימורים סגורים כרגע." };
-  if (round.closes_at && new Date(round.closes_at) <= new Date())
-    return { ok: false, error: "עבר המועד הקובע — ההימורים נסגרו." };
+  // Betting is allowed when the round is globally open, OR this user has a
+  // personal extension window granted by an admin.
+  if (!canBet(round, profile.bet_open_until))
+    return { ok: false, error: "ההימורים סגורים כרגע." };
 
   const parties = await getParties(round.id);
   // Nickname comes from the profile (set in the personal area), not the bet form.
