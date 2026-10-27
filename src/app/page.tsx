@@ -9,6 +9,7 @@ import {
   getMyBid,
   computePollMetrics,
 } from "@/lib/data";
+import { ilsShort } from "@/lib/format";
 import { PotsBar } from "@/components/PotsBar";
 import { ProjectionStats } from "@/components/ProjectionStats";
 import { StatusBanner } from "@/components/StatusBanner";
@@ -52,8 +53,11 @@ export default async function HomePage() {
   const progressStep: 1 | 2 | 3 | null =
     profile && !settled ? (!myBid ? 1 : !myBid.paid ? 2 : 3) : null;
 
-  // The logged-in player's own poll projection (shown under the board).
+  // The logged-in player's own poll projection (shown under the board, pre-results).
   const myMetrics = myBid ? computePollMetrics(data, myBid.nickname) : null;
+  // The logged-in player's winnings under the entered results (interim or final).
+  const myResult =
+    settlement && myBid ? settlement.results.find((r) => r.nickname === myBid.nickname) : null;
 
   const dashParties: DashParty[] = data.parties.map((p) => ({
     id: p.id,
@@ -83,6 +87,10 @@ export default async function HomePage() {
         snipes: r.snipes,
         correctPassfail: r.correctPassfail,
         total: r.total,
+        mandate: r.mandate,
+        gold: r.gold,
+        sniper: r.sniper,
+        passfail_win: r.passfail,
       };
     });
   } else {
@@ -119,21 +127,23 @@ export default async function HomePage() {
       {/* 2) The dashboard */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-bold">{settled ? "תוצאות סופיות" : "המצב בסבב"}</h2>
+          <h2 className="text-xl font-bold">
+            {settled ? "תוצאות סופיות" : resultsExist ? "המצב עכשיו" : "המצב בסבב"}
+          </h2>
           {pots.participants > 0 && (
             <span className="text-sm text-slate-400">{pots.participants} משתתפים פעילים</span>
           )}
         </div>
         {resultsExist && (
           <div className="mb-3">
-            <ResultsStrip parties={data.parties} />
+            <ResultsStrip parties={data.parties} final={settled} />
           </div>
         )}
         <Dashboard
           parties={dashParties}
           rows={rows}
           showResults={resultsExist}
-          showWinnings={settled}
+          final={settled}
           scenario={{
             threshold: round.threshold_pct,
             config: {
@@ -156,15 +166,43 @@ export default async function HomePage() {
                 sniperPot={pots.sniperPot}
                 passfailPot={pots.passfailPot}
               />
-              {myMetrics && (
-                <div className="card p-5">
-                  <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
-                  <p className="mb-3 text-xs text-slate-400">
-                    לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי. לחצו על כרטיס לפירוט.
-                  </p>
-                  <ProjectionStats metrics={myMetrics} />
-                </div>
-              )}
+              {resultsExist
+                ? myResult && (
+                    <div className="card p-5">
+                      <h3 className="mb-1 font-bold">
+                        {settled ? "🏆 הזכייה הסופית שלך" : "💰 הזכייה שלך אם אלו התוצאות"}
+                      </h3>
+                      <p className="mb-3 text-xs text-slate-400">
+                        {settled
+                          ? "חושב לפי התוצאות הסופיות."
+                          : "לפי התוצאות הזמניות (ממוצע כל המדגמים) — הערכה בלבד, לא סופי."}
+                      </p>
+                      <div className="text-3xl font-extrabold text-brand-700">{ilsShort(myResult.total)}</div>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          מנדטים {ilsShort(myResult.mandate)}
+                        </span>
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          זהב {ilsShort(myResult.gold)}
+                        </span>
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          צלפים {ilsShort(myResult.sniper)}
+                        </span>
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
+                          עוברת/לא {ilsShort(myResult.passfail)}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                : myMetrics && (
+                    <div className="card p-5">
+                      <h3 className="mb-1 font-bold">🔮 התחזית שלך</h3>
+                      <p className="mb-3 text-xs text-slate-400">
+                        לפי ממוצע הסקרים הנוכחי — לצפייה בלבד, לא סופי. לחצו על כרטיס לפירוט.
+                      </p>
+                      <ProjectionStats metrics={myMetrics} />
+                    </div>
+                  )}
             </div>
           }
         />

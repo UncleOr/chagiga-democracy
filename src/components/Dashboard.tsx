@@ -32,6 +32,11 @@ export interface DashRow {
   snipes?: number;
   correctPassfail?: number;
   total?: number;
+  // Winnings breakdown (present once results are entered)
+  mandate?: number;
+  gold?: number;
+  sniper?: number;
+  passfail_win?: number;
 }
 
 const blocColor = (b: BlocKey | null) => BLOCS.find((x) => x.key === b)?.color ?? "#94a3b8";
@@ -52,18 +57,19 @@ export function Dashboard({
   parties,
   rows,
   showResults,
-  showWinnings,
+  final,
   scenario,
   abovePoll,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
-  showWinnings: boolean;
+  /** true once the results are marked final (money distributed) */
+  final: boolean;
   scenario: DashScenario;
   abovePoll?: ReactNode;
 }) {
-  // Default to the overview ("מה המצב בינתיים"); switch to results/participants on demand.
+  // Default to the overview ("מה המצב"); switch to results/participants on demand.
   const [tab, setTab] = useState<"table" | "poll">("poll");
 
   if (rows.length === 0) {
@@ -77,13 +83,13 @@ export function Dashboard({
           onClick={() => setTab("poll")}
           className={`rounded-lg px-4 py-1.5 transition ${tab === "poll" ? "bg-white shadow-sm" : "text-slate-500"}`}
         >
-          📊 מה המצב בינתיים
+          📊 {showResults ? "מה המצב עכשיו" : "מה המצב בינתיים"}
         </button>
         <button
           onClick={() => setTab("table")}
           className={`rounded-lg px-4 py-1.5 transition ${tab === "table" ? "bg-white shadow-sm" : "text-slate-500"}`}
         >
-          {showWinnings ? "🏆 תוצאות" : "👥 משתתפים"}
+          {showResults ? "🏆 תוצאות" : "👥 משתתפים"}
         </button>
       </div>
 
@@ -92,11 +98,21 @@ export function Dashboard({
           parties={parties}
           rows={rows}
           showResults={showResults}
-          showWinnings={showWinnings}
+          final={final}
           scenario={scenario}
         />
       ) : (
         <>
+          {showResults &&
+            (final ? (
+              <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800">
+                🏆 אלו התוצאות הסופיות. הזכיות למטה הן הזכיות הסופיות.
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                ⏳ <b>תוצאות זמניות</b> — ממוצע כל המדגמים. הזכיות למטה הן הערכה בלבד ואינן סופיות.
+              </div>
+            ))}
           {abovePoll}
           <AveragePoll parties={parties} rows={rows} />
         </>
@@ -117,13 +133,13 @@ function ParticipantsTable({
   parties,
   rows,
   showResults,
-  showWinnings,
+  final,
   scenario,
 }: {
   parties: DashParty[];
   rows: DashRow[];
   showResults: boolean;
-  showWinnings: boolean;
+  final: boolean;
   scenario: DashScenario;
 }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -197,8 +213,8 @@ function ParticipantsTable({
               <th className="px-3 py-3 font-medium">תוספות</th>
               {showResults && <th className="px-3 py-3 font-medium">פסילות</th>}
               {showResults && <th className="px-3 py-3 font-medium">צליפות</th>}
-              {showWinnings ? (
-                <th className="px-3 py-3 text-left font-medium">זכייה</th>
+              {showResults ? (
+                <th className="px-3 py-3 text-left font-medium">{final ? "זכייה סופית" : "זכייה (אם אלו התוצאות)"}</th>
               ) : (
                 <th className="px-3 py-3 font-medium">תשלום</th>
               )}
@@ -235,7 +251,7 @@ function ParticipantsTable({
                     {showResults && (
                       <td className="px-3 py-3 tabular-nums">{r.has_sniper ? r.snipes ?? 0 : "—"}</td>
                     )}
-                    {showWinnings ? (
+                    {showResults ? (
                       <td className="px-3 py-3 text-left font-extrabold text-brand-700 tabular-nums">
                         {ilsShort(r.total ?? 0)}
                       </td>
@@ -252,7 +268,13 @@ function ParticipantsTable({
                   {isOpen && (
                     <tr className="border-b border-slate-100 bg-slate-50/60">
                       <td colSpan={cols} className="px-4 py-4">
-                        <PredictionDetail party={parties} row={r} metrics={metricsByNick.get(r.nickname)} />
+                        <PredictionDetail
+                          party={parties}
+                          row={r}
+                          showResults={showResults}
+                          final={final}
+                          metrics={showResults ? undefined : metricsByNick.get(r.nickname)}
+                        />
                       </td>
                     </tr>
                   )}
@@ -273,10 +295,14 @@ function PredictionDetail({
   party,
   row,
   metrics,
+  showResults,
+  final,
 }: {
   party: DashParty[];
   row: DashRow;
   metrics?: BidMetrics;
+  showResults: boolean;
+  final: boolean;
 }) {
   const blocSums: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
   for (const p of party) if (p.bloc) blocSums[p.bloc] += row.seats[p.id] ?? 0;
@@ -284,13 +310,27 @@ function PredictionDetail({
 
   return (
     <div className="space-y-3">
-      {metrics && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat label="זכיית משתמש אם התוצאות כמו בסקרים" value={ilsShort(metrics.pollTotal)} accent />
-          <Stat label="זכיית משתמש אם היה מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
-          <Stat label="הכי דומה לכולם" value={metrics.mostSimilar ?? "—"} />
-          <Stat label="הכי שונה מכולם" value={metrics.mostDifferent ?? "—"} />
+      {showResults ? (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <Stat
+            label={final ? "זכייה סופית" : "זכייה אם אלו התוצאות"}
+            value={ilsShort(row.total ?? 0)}
+            accent
+          />
+          <Stat label="מנדטים" value={ilsShort(row.mandate ?? 0)} />
+          <Stat label="זהב (פסילות)" value={ilsShort(row.gold ?? 0)} />
+          <Stat label="צלפים 🎯" value={ilsShort(row.sniper ?? 0)} />
+          <Stat label="עוברת / לא" value={ilsShort(row.passfail_win ?? 0)} />
         </div>
+      ) : (
+        metrics && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label="זכיית משתמש אם התוצאות כמו בסקרים" value={ilsShort(metrics.pollTotal)} accent />
+            <Stat label="זכיית משתמש אם היה מנחש בול" value={ilsShort(metrics.perfectTotal)} accent />
+            <Stat label="הכי דומה לכולם" value={metrics.mostSimilar ?? "—"} />
+            <Stat label="הכי שונה מכולם" value={metrics.mostDifferent ?? "—"} />
+          </div>
+        )
       )}
       <div className="flex flex-wrap gap-2">
         {BLOCS.map((b) => (

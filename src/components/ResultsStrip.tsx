@@ -1,11 +1,20 @@
 import type { Party } from "@/lib/types";
 
-export function ResultsStrip({ parties }: { parties: Party[] }) {
+export function ResultsStrip({ parties, final = false }: { parties: Party[]; final?: boolean }) {
   const withSeats = parties.filter((p) => p.actual_seats !== null);
   if (withSeats.length === 0) return null;
   return (
     <div className="card p-4">
-      <div className="mb-3 text-sm font-bold text-slate-600">תוצאות הבחירות</div>
+      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-600">
+        {final ? (
+          <>תוצאות הבחירות <span className="badge bg-brand-50 text-brand-700">סופי</span></>
+        ) : (
+          <>
+            תוצאות זמניות
+            <span className="badge bg-amber-100 text-amber-700">ממוצע כל המדגמים</span>
+          </>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2">
         {withSeats.map((p) => (
           <div

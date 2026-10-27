@@ -1,5 +1,5 @@
 import { getAllRounds, getParties } from "@/lib/data";
-import { saveResults } from "@/lib/actions/admin";
+import { saveResults, settleRound, setRoundStatus } from "@/lib/actions/admin";
 
 export default async function AdminResults({
   searchParams,
@@ -13,10 +13,37 @@ export default async function AdminResults({
 
   const parties = await getParties(round.id);
   const total = parties.reduce((s, p) => s + (p.actual_seats ?? 0), 0);
+  const resultsExist = parties.some((p) => p.actual_seats !== null);
+  const isFinal = round.status === "settled";
 
   return (
-    <form action={saveResults} className="space-y-4">
-      <input type="hidden" name="round_id" value={round.id} />
+    <div className="space-y-4">
+      {/* Finality control */}
+      <div className="card p-4">
+        {isFinal ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="badge bg-brand-50 text-brand-700">🏆 התוצאות מסומנות כסופיות — הזכיות חולקו</span>
+            <form action={setRoundStatus.bind(null, round.id, "closed")}>
+              <button className="btn-ghost !px-3 !py-1.5 text-xs">ביטול סופיות — חזרה לזמני</button>
+            </form>
+          </div>
+        ) : resultsExist ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="badge bg-amber-100 text-amber-700">⏳ תוצאות זמניות — ממוצע כל המדגמים, גלוי לכולם כזכייה משוערת</span>
+            <form action={settleRound.bind(null, round.id)}>
+              <button className="btn-primary !px-4 !py-2 text-sm">✓ סימון כתוצאות סופיות</button>
+            </form>
+          </div>
+        ) : (
+          <span className="text-sm text-slate-400">עדיין לא הוזנו תוצאות. שמרו מנדטים כדי להציג מצב זמני.</span>
+        )}
+        <p className="mt-2 text-xs text-slate-400">
+          כל עוד התוצאות זמניות — כולם רואים “זכייה אם אלו התוצאות”. סימון כסופיות הופך אותן ל“זכייה סופית” ומפרסם את החלוקה.
+        </p>
+      </div>
+
+      <form action={saveResults} className="space-y-4">
+        <input type="hidden" name="round_id" value={round.id} />
       <div className="flex items-center justify-between">
         <h2 className="font-bold">הזנת תוצאות · {round.name}</h2>
         <span className="badge bg-slate-100 text-slate-600">סה״כ מנדטים: {total}</span>
@@ -65,10 +92,11 @@ export default async function AdminResults({
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-slate-400">
-          שמירה מעדכנת מיד את טבלת הדירוג. פרסום תוצאות סופיות (וחלוקת הכסף) מתבצע בלשונית “סבב והגדרות”.
+          שמירה מעדכנת מיד את טבלת הדירוג והזכיות המשוערות לכולם. לסימון כסופי — הכפתור למעלה.
         </p>
         <button className="btn-primary">שמירת תוצאות</button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }
