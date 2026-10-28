@@ -66,6 +66,7 @@ export default async function HomePage() {
     bloc: p.bloc,
     poll_seats: p.poll_seats,
     actual_seats: p.actual_seats,
+    actual_passed: p.actual_passed,
   }));
 
   // Build dashboard rows (each carries the participant's full predictions)

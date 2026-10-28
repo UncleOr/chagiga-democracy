@@ -1,4 +1,4 @@
-import type { Party, ResultsMode } from "@/lib/types";
+import { BLOCS, type Party, type ResultsMode } from "@/lib/types";
 import { dateTimeHe, resultsModeLabel } from "@/lib/format";
 
 export function ResultsStrip({
@@ -15,6 +15,11 @@ export function ResultsStrip({
   const withSeats = parties.filter((p) => p.actual_seats !== null);
   if (withSeats.length === 0) return null;
   const label = resultsModeLabel(mode, pct);
+
+  // Bloc snapshot from the actual results.
+  const blocSums: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
+  for (const p of withSeats) if (p.bloc) blocSums[p.bloc] += p.actual_seats ?? 0;
+  const hasBlocs = Object.values(blocSums).some((v) => v > 0);
   return (
     <div className="card p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-600">
@@ -28,6 +33,24 @@ export function ResultsStrip({
           <span className="text-xs font-normal text-slate-400">עודכן {dateTimeHe(updatedAt)}</span>
         )}
       </div>
+      {hasBlocs && (
+        <div className="mb-3 grid gap-2 sm:grid-cols-3">
+          {BLOCS.map((b) => (
+            <div
+              key={b.key}
+              className="flex items-center justify-between rounded-xl border-r-4 bg-slate-50/70 px-3 py-2"
+              style={{ borderColor: b.color }}
+            >
+              <span className="text-sm font-bold" style={{ color: b.color }}>
+                {b.label}
+              </span>
+              <span className="text-lg font-extrabold tabular-nums" style={{ color: b.color }}>
+                {blocSums[b.key]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {withSeats.map((p) => (
           <div

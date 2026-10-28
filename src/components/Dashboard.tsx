@@ -17,6 +17,7 @@ export interface DashParty {
   bloc: BlocKey | null;
   poll_seats: number | null;
   actual_seats: number | null;
+  actual_passed: boolean | null;
 }
 
 export interface DashRow {
@@ -42,13 +43,24 @@ export interface DashRow {
 const blocColor = (b: BlocKey | null) => BLOCS.find((x) => x.key === b)?.color ?? "#94a3b8";
 const medal = (i: number) => ["🥇", "🥈", "🥉"][i] ?? (i + 1).toString();
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function Stat({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: boolean;
+}) {
   return (
     <div className={`rounded-xl px-3 py-2 ${accent ? "bg-brand-50" : "bg-white"}`}>
       <div className="text-[11px] leading-tight text-slate-500">{label}</div>
       <div className={`mt-0.5 truncate text-sm font-extrabold ${accent ? "text-brand-700" : "text-slate-700"}`}>
         {value}
       </div>
+      {sub && <div className="mt-0.5 text-[10px] leading-tight text-slate-400">{sub}</div>}
     </div>
   );
 }
@@ -154,6 +166,28 @@ function ParticipantsTable({
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const cols = 3 + (showResults ? 2 : 0) + 1;
+
+  // Per-party mandate winnings for each participant, using the real results.
+  // Mirrors settle()'s mandate block: each party's sub-pot goes to the closest guess(es).
+  const mandateWins = useMemo(() => {
+    const out = new Map<string, Map<string, number>>();
+    if (!showResults) return out;
+    const { base_bet } = scenario.config;
+    const mult = (r: DashRow) => (r.is_double ? 2 : 1);
+    const basicTotal = rows.reduce((s, r) => s + mult(r) * base_bet, 0);
+    const perParty = parties.length ? basicTotal / 2 / parties.length : 0;
+    for (const r of rows) out.set(r.nickname, new Map());
+    for (const p of parties) {
+      const actual = p.actual_seats ?? 0;
+      const deltaOf = (r: DashRow) => Math.abs((r.seats[p.id] ?? 0) - actual);
+      const minDelta = Math.min(...rows.map(deltaOf));
+      const winners = rows.filter((r) => deltaOf(r) === minDelta);
+      const denom = winners.reduce((s, r) => s + mult(r), 0);
+      if (denom > 0)
+        for (const r of winners) out.get(r.nickname)!.set(p.id, (perParty * mult(r)) / denom);
+    }
+    return out;
+  }, [parties, rows, showResults, scenario]);
 
   // "What-if" projections using the news-poll averages as the assumed result.
   const metricsByNick = useMemo(() => {
@@ -283,6 +317,7 @@ function ParticipantsTable({
                           row={r}
                           showResults={showResults}
                           final={final}
+                          wins={showResults ? mandateWins.get(r.nickname) : undefined}
                           metrics={showResults ? undefined : metricsByNick.get(r.nickname)}
                         />
                       </td>
@@ -305,18 +340,24 @@ function PredictionDetail({
   party,
   row,
   metrics,
+  wins,
   showResults,
   final,
 }: {
   party: DashParty[];
   row: DashRow;
   metrics?: BidMetrics;
+  wins?: Map<string, number>;
   showResults: boolean;
   final: boolean;
 }) {
   const blocSums: Record<string, number> = { coalition: 0, change: 0, arab: 0 };
   for (const p of party) if (p.bloc) blocSums[p.bloc] += row.seats[p.id] ?? 0;
   const total = party.reduce((s, p) => s + (row.seats[p.id] ?? 0), 0);
+
+  // Signed miss for a party: predicted − actual (0 = bull's-eye).
+  const missOf = (p: DashParty) => (row.seats[p.id] ?? 0) - (p.actual_seats ?? 0);
+  const missText = (d: number) => (d === 0 ? "בול" : d > 0 ? `+${d}` : `${d}`);
 
   return (
     <div className="space-y-3">
@@ -327,10 +368,22 @@ function PredictionDetail({
             value={ilsShort(row.total ?? 0)}
             accent
           />
-          <Stat label="מנדטים" value={ilsShort(row.mandate ?? 0)} />
-          <Stat label="זהב (פסילות)" value={ilsShort(row.gold ?? 0)} />
-          <Stat label="צלפים 🎯" value={ilsShort(row.sniper ?? 0)} />
-          <Stat label="עוברת / לא" value={ilsShort(row.passfail_win ?? 0)} />
+          <Stat label="מנדטים" value={ilsShort(row.mandate ?? 0)} sub="סגירה הכי קרובה לכל מפלגה" />
+          <Stat
+            label="זהב (פסילות)"
+            value={ilsShort(row.gold ?? 0)}
+            sub={`הפער שלך: ${row.totalDelta ?? 0} מנדטים סה״כ`}
+          />
+          <Stat
+            label="צלפים 🎯"
+            value={ilsShort(row.sniper ?? 0)}
+            sub={row.has_sniper ? `${row.snipes ?? 0} צליפות מדויקות` : "לא נרכש"}
+          />
+          <Stat
+            label="עוברת / לא"
+            value={ilsShort(row.passfail_win ?? 0)}
+            sub={row.has_passfail ? `${row.correctPassfail ?? 0} ניחושים נכונים` : "לא נרכש"}
+          />
         </div>
       ) : (
         metrics && (
@@ -356,26 +409,85 @@ function PredictionDetail({
           סה"כ {total}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4">
-        {party.map((p) => {
-          const n = row.seats[p.id] ?? 0;
-          const pf = row.has_passfail && p.is_swing ? row.passfail[p.id] : undefined;
-          return (
-            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5">
-              <span className="flex min-w-0 items-center gap-1.5 truncate text-xs text-slate-600">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: blocColor(p.bloc) }} />
-                <span className="truncate">{p.nickname}</span>
-                {pf !== undefined && (
-                  <span className={`text-[10px] ${pf ? "text-green-600" : "text-red-500"}`}>
-                    {pf ? "✓עוברת" : "✗לא"}
-                  </span>
-                )}
-              </span>
-              <span className="font-bold tabular-nums">{n}</span>
-            </div>
-          );
-        })}
-      </div>
+
+      {showResults ? (
+        <>
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+            {party.map((p) => {
+              const n = row.seats[p.id] ?? 0;
+              const actual = p.actual_seats ?? 0;
+              const miss = missOf(p);
+              const won = wins?.get(p.id) ?? 0;
+              const hit = miss === 0;
+              const sniped = hit && row.has_sniper;
+              const pf = row.has_passfail && p.is_swing ? row.passfail[p.id] : undefined;
+              const pfRight = pf !== undefined && pf === p.actual_passed;
+              return (
+                <div
+                  key={p.id}
+                  className={`rounded-lg border px-2.5 py-2 ${
+                    won > 0 ? "border-brand-200 bg-brand-50/50" : "border-slate-100 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-semibold text-slate-700">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: blocColor(p.bloc) }} />
+                      <span className="truncate">{p.nickname}</span>
+                      {sniped && <span title="צליפה מדויקת">🎯</span>}
+                    </span>
+                    <span
+                      className={`shrink-0 rounded px-1.5 text-[11px] font-bold tabular-nums ${
+                        hit ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {missText(miss)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span>
+                      ניחשת <b className="tabular-nums text-slate-700">{n}</b> · בפועל{" "}
+                      <b className="tabular-nums text-slate-700">{actual}</b>
+                      {pf !== undefined && (
+                        <span className={pfRight ? "text-green-600" : "text-red-500"}>
+                          {" "}
+                          · {pf ? "עוברת" : "לא"} {pfRight ? "✓" : "✗"}
+                        </span>
+                      )}
+                    </span>
+                    {won > 0 && (
+                      <span className="shrink-0 font-bold text-brand-700">+{ilsShort(won)}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-center text-[11px] text-slate-400">
+            ירוק = ניחשת הכי קרוב וזכית במנדט הזה · 🎯 = צליפה מדויקת (בול)
+          </p>
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4">
+          {party.map((p) => {
+            const n = row.seats[p.id] ?? 0;
+            const pf = row.has_passfail && p.is_swing ? row.passfail[p.id] : undefined;
+            return (
+              <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5">
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-xs text-slate-600">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: blocColor(p.bloc) }} />
+                  <span className="truncate">{p.nickname}</span>
+                  {pf !== undefined && (
+                    <span className={`text-[10px] ${pf ? "text-green-600" : "text-red-500"}`}>
+                      {pf ? "✓עוברת" : "✗לא"}
+                    </span>
+                  )}
+                </span>
+                <span className="font-bold tabular-nums">{n}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
