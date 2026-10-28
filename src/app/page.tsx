@@ -9,7 +9,7 @@ import {
   getMyBid,
   computePollMetrics,
 } from "@/lib/data";
-import { ilsShort } from "@/lib/format";
+import { ilsShort, resultsModeLabel } from "@/lib/format";
 import { PotsBar } from "@/components/PotsBar";
 import { ProjectionStats } from "@/components/ProjectionStats";
 import { StatusBanner } from "@/components/StatusBanner";
@@ -136,7 +136,12 @@ export default async function HomePage() {
         </div>
         {resultsExist && (
           <div className="mb-3">
-            <ResultsStrip parties={data.parties} final={settled} />
+            <ResultsStrip
+              parties={data.parties}
+              mode={round.results_mode}
+              pct={round.results_pct}
+              updatedAt={round.results_updated_at}
+            />
           </div>
         )}
         <Dashboard
@@ -144,6 +149,9 @@ export default async function HomePage() {
           rows={rows}
           showResults={resultsExist}
           final={settled}
+          mode={round.results_mode}
+          pct={round.results_pct}
+          updatedAt={round.results_updated_at}
           scenario={{
             threshold: round.threshold_pct,
             config: {
@@ -175,7 +183,7 @@ export default async function HomePage() {
                       <p className="mb-3 text-xs text-slate-400">
                         {settled
                           ? "חושב לפי התוצאות הסופיות."
-                          : "לפי התוצאות הזמניות (ממוצע כל המדגמים) — הערכה בלבד, לא סופי."}
+                          : `לפי ${resultsModeLabel(round.results_mode, round.results_pct).badge} — הערכה בלבד, לא סופי.`}
                       </p>
                       <div className="text-3xl font-extrabold text-brand-700">{ilsShort(myResult.total)}</div>
                       <div className="mt-3 flex flex-wrap gap-2 text-xs">

@@ -1,8 +1,8 @@
 "use client";
 
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import { ilsShort } from "@/lib/format";
-import { BLOCS, type BlocKey } from "@/lib/types";
+import { ilsShort, dateTimeHe, resultsModeLabel } from "@/lib/format";
+import { BLOCS, type BlocKey, type ResultsMode } from "@/lib/types";
 import { settle, type CalcBid, type CalcConfig, type CalcParty } from "@/lib/calc";
 
 export interface DashScenario {
@@ -58,6 +58,9 @@ export function Dashboard({
   rows,
   showResults,
   final,
+  mode = "samples",
+  pct = null,
+  updatedAt = null,
   scenario,
   abovePoll,
 }: {
@@ -66,9 +69,14 @@ export function Dashboard({
   showResults: boolean;
   /** true once the results are marked final (money distributed) */
   final: boolean;
+  /** how the entered results are presented */
+  mode?: ResultsMode;
+  pct?: number | null;
+  updatedAt?: string | null;
   scenario: DashScenario;
   abovePoll?: ReactNode;
 }) {
+  const modeLabel = resultsModeLabel(mode, pct);
   // Default to the overview ("מה המצב"); switch to results/participants on demand.
   const [tab, setTab] = useState<"table" | "poll">("poll");
 
@@ -107,10 +115,12 @@ export function Dashboard({
             (final ? (
               <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800">
                 🏆 אלו התוצאות הסופיות. הזכיות למטה הן הזכיות הסופיות.
+                {updatedAt && <span className="font-normal text-brand-600"> · עודכן {dateTimeHe(updatedAt)}</span>}
               </div>
             ) : (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                ⏳ <b>תוצאות זמניות</b> — ממוצע כל המדגמים. הזכיות למטה הן הערכה בלבד ואינן סופיות.
+                ⏳ <b>{modeLabel.title}</b> — {modeLabel.badge}. הזכיות למטה הן הערכה בלבד ואינן סופיות.
+                {updatedAt && <span className="text-amber-600"> · עודכן {dateTimeHe(updatedAt)}</span>}
               </div>
             ))}
           {abovePoll}

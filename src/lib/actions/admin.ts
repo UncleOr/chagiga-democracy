@@ -134,13 +134,42 @@ export async function saveResults(formData: FormData) {
     const actual_passed = p.is_swing ? passRaw === "pass" : null;
     await admin.from("parties").update({ actual_seats, actual_passed }).eq("id", p.id);
   }
+
+  // Results presentation: samples (poll avg) | live (partial real count, +%) | final.
+  const modeRaw = String(formData.get("results_mode") ?? "samples");
+  const results_mode = (["samples", "live", "final"] as const).includes(modeRaw as never)
+    ? (modeRaw as "samples" | "live" | "final")
+    : "samples";
+  const pctRaw = formData.get("results_pct");
+  const results_pct =
+    results_mode === "live" && pctRaw !== null && String(pctRaw).trim() !== ""
+      ? Math.min(100, Math.max(0, Number(pctRaw)))
+      : null;
+
+  await admin
+    .from("rounds")
+    .update({
+      results_mode,
+      results_pct,
+      results_updated_at: new Date().toISOString(),
+      // "final" pays out (status settled); otherwise keep the round closed/interim.
+      status: results_mode === "final" ? "settled" : "closed",
+    })
+    .eq("id", round_id);
+
   refreshAll();
   revalidatePath("/admin/results");
 }
 
 export async function settleRound(roundId: string) {
   await requireAdmin();
-  await setRoundStatus(roundId, "settled");
+  const admin = createAdminClient();
+  await admin
+    .from("rounds")
+    .update({ results_mode: "final", results_updated_at: new Date().toISOString(), status: "settled" })
+    .eq("id", roundId);
+  refreshAll();
+  revalidatePath("/admin/results");
 }
 
 // ── Payments ────────────────────────────────────────────────────────────────

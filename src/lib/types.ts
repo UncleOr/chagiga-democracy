@@ -28,7 +28,14 @@ export interface Round {
   paybox_url: string | null;
   closes_at: string | null; // ISO — auto-close time ("המועד הקובע")
   created_at: string;
+  results_mode: ResultsMode; // how entered results are presented to everyone
+  results_pct: number | null; // % of votes counted (only meaningful for "live")
+  results_updated_at: string | null; // ISO — when results were last saved
 }
+
+// How the entered results are labeled for everyone:
+// samples = average of all polls, live = partial real count (+%), final = official final.
+export type ResultsMode = "samples" | "live" | "final";
 
 export interface Party {
   id: string;
